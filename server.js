@@ -8,6 +8,16 @@ const { finalizeBookingFromCallId } = require('./lib/finalizeBooking');
 
 const app = express();
 
+// ── GLOBAL MIDDLEWARE (Moved to top to prevent 404s) ──────────────────────────
+app.use(express.static(path.join(__dirname)));
+app.use(express.json());
+
+// ── ROOT ROUTE (Serves front-end dashboard) ───────────────────────────────────
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// ── HEALTH CHECK ──────────────────────────────────────────────────────────────
 app.get('/health', async (req, res) => {
     try {
         const { getPool } = require('./lib/db');
@@ -21,6 +31,7 @@ app.get('/health', async (req, res) => {
     }
 });
 
+// ── API ROUTES ────────────────────────────────────────────────────────────────
 app.get('/api/bookings', async (req, res) => {
     try {
         const { getPool } = require('./lib/db');
@@ -49,7 +60,7 @@ app.get('/api/shibirs', async (req, res) => {
     }
 });
 
-app.post('/api/bookings/manual', express.json(), async (req, res) => {
+app.post('/api/bookings/manual', async (req, res) => {
     const booking = req.body;
     if (!booking.mumukshu_name || !booking.mumukshu_phone || !booking.start_date || !booking.end_date) {
         return res.status(400).json({ error: 'Name, Phone, Start Date, and End Date are required' });
@@ -116,7 +127,7 @@ app.post('/api/bookings/manual', express.json(), async (req, res) => {
     }
 });
 
-app.post('/api/bookings/finalize', express.json(), async (req, res) => {
+app.post('/api/bookings/finalize', async (req, res) => {
     const callId = req.body?.call_id;
     if (!callId) {
         return res.status(400).json({ error: 'call_id is required' });
@@ -136,12 +147,12 @@ app.post('/api/bookings/finalize', express.json(), async (req, res) => {
     }
 });
 
-// ── Verify registered phone number ────────────────────────────────────────────
-app.post('/verify-phone', express.json(), async (req, res) => {
+// ── VERIFY REGISTERED PHONE NUMBER ────────────────────────────────────────────
+app.post('/verify-phone', async (req, res) => {
     const { phone } = req.body;
     if (!phone) return res.status(400).json({ found: false });
 
-    // Strip country code, spaces, dashes — keep last 10 digits
+    // Keeps last 10 digits and strips country code prefixes like 91
     const cleaned = phone.replace(/\D/g, '').replace(/^91/, '').slice(-10);
 
     try {
@@ -169,6 +180,7 @@ app.post('/verify-phone', express.json(), async (req, res) => {
     }
 });
 
+// ── RETELL AI WEBHOOK ─────────────────────────────────────────────────────────
 app.post(
     '/webhook/retell',
     express.raw({ type: 'application/json' }),
@@ -209,8 +221,7 @@ app.post(
     }
 );
 
-app.use(express.json());
-
+// ── RETELL WEB CALL ORIGINATION ───────────────────────────────────────────────
 async function createWebCall(req, res) {
     const apiKey = process.env.RETELL_API_KEY;
     const agentId = process.env.RETELL_AGENT_ID || req.body?.agent_id;
@@ -242,8 +253,7 @@ async function createWebCall(req, res) {
 app.post('/create-web-call', createWebCall);
 app.post('/create_web_call', createWebCall);
 
-app.use(express.static(path.join(__dirname)));
-
+// ── INITIALIZE SERVER (Local Fallback) ────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server listening at http://localhost:${PORT}`);
@@ -251,3 +261,6 @@ app.listen(PORT, () => {
     console.log(`Save booking after call: POST /api/bookings/finalize`);
     console.log(`Retell webhook (optional): http://localhost:${PORT}/webhook/retell`);
 });
+
+// ── EXPORT FOR VERCEL SERVERLESS RUNTIME ──────────────────────────────────────
+module.exports = app;
