@@ -2,13 +2,14 @@ require('dotenv').config();
 
 const express = require('express');
 const path = require('path');
-const { Retell } = require('retell-sdk');
-const { saveBookingFromCall } = require('./lib/saveBooking');
-const { finalizeBookingFromCallId } = require('./lib/finalizeBooking');
+const axios = require('axios');
+const multer = require('multer');
+const FormData = require('form-data');
 
 const app = express();
+const upload = multer();
 
-// ── GLOBAL MIDDLEWARE (Moved to top to prevent 404s) ──────────────────────────
+// ── GLOBAL MIDDLEWARE ────────────────────────────────────────────────────────
 app.use(express.static(path.join(__dirname)));
 app.use(express.json());
 
@@ -83,37 +84,16 @@ app.post('/api/bookings/manual', async (req, res) => {
         const { getPool } = require('./lib/db');
         const pool = getPool();
 
-        if (booking.booked_shibir && booking.booked_shibir.trim() !== '') {
-            const shibirName = booking.booked_shibir.trim();
-            const [shibirRows] = await pool.query(
-                'SELECT * FROM shibirs WHERE shibir_name = ?',
-                [shibirName]
-            );
-            if (shibirRows.length === 0) {
-                const swadhyayKarta = booking.swadhyay_karta || 'Unknown';
-                await pool.execute(
-                    'INSERT INTO shibirs (shibir_name, swadhyay_karta) VALUES (?, ?)',
-                    [shibirName, swadhyayKarta]
-                );
-                console.log(`Auto-added new shibir: ${shibirName}`);
-            }
-        }
-
         const [result] = await pool.execute(
             `INSERT INTO bookings (
-                mumukshu_name, mumukshu_phone, start_date, end_date, total_persons,
-                wants_room, floor_preference, booked_shibir,
+                mumukshu_name, mumukshu_phone, start_date, end_date,
                 has_breakfast, has_lunch, has_dinner, dietary_preference
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 booking.mumukshu_name || null,
                 booking.mumukshu_phone || null,
                 booking.start_date || null,
                 booking.end_date || null,
-                parseInt(booking.total_persons, 10) || 1,
-                booking.wants_room ? 1 : 0,
-                booking.floor_preference || null,
-                booking.booked_shibir || null,
                 booking.has_breakfast ? 1 : 0,
                 booking.has_lunch ? 1 : 0,
                 booking.has_dinner ? 1 : 0,
@@ -127,48 +107,28 @@ app.post('/api/bookings/manual', async (req, res) => {
     }
 });
 
-app.post('/api/bookings/finalize', async (req, res) => {
-    const callId = req.body?.call_id;
-    if (!callId) {
-        return res.status(400).json({ error: 'call_id is required' });
-    }
-
-    try {
-        const result = await finalizeBookingFromCallId(callId);
-        if (result.saved) {
-            console.log(`Booking saved from call ${callId}: id=${result.booking_id}`);
-        } else {
-            console.warn(`Booking not saved for ${callId}:`, result.reason);
-        }
-        res.json(result);
-    } catch (err) {
-        console.error('Finalize booking error:', err);
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// ── VERIFY REGISTERED PHONE NUMBER ────────────────────────────────────────────
+// ── VERIFY REGISTERED PHONE NUMBER (From registered_users) ───────────────────
 app.post('/verify-phone', async (req, res) => {
     const { phone } = req.body;
     if (!phone) return res.status(400).json({ found: false });
 
-    // Keeps last 10 digits and strips country code prefixes like 91
     const cleaned = phone.replace(/\D/g, '').replace(/^91/, '').slice(-10);
 
     try {
         const { getPool } = require('./lib/db');
         const pool = getPool();
+        
         const [rows] = await pool.query(
-            'SELECT name, centre_name FROM registered_users WHERE phone = ?',
+            'SELECT name, centre_name FROM registered_users WHERE RIGHT(phone, 10) = ?',
             [cleaned]
         );
 
         if (!rows.length) {
-            console.log(`[verify-phone] Not found: ${cleaned}`);
+            console.log(`[verify-phone] Not found in registered_users: ${cleaned}`);
             return res.json({ found: false });
         }
 
-        console.log(`[verify-phone] Found: ${rows[0].name} — ${rows[0].centre_name}`);
+        console.log(`[verify-phone] Found user: ${rows[0].name} — ${rows[0].centre_name}`);
         return res.json({
             found: true,
             name: rows[0].name,
@@ -180,87 +140,45 @@ app.post('/verify-phone', async (req, res) => {
     }
 });
 
-// ── RETELL AI WEBHOOK ─────────────────────────────────────────────────────────
-app.post(
-    '/webhook/retell',
-    express.raw({ type: 'application/json' }),
-    async (req, res) => {
-        const rawBody = req.body.toString('utf-8');
-        const apiKey = process.env.RETELL_API_KEY;
-
-        if (apiKey && process.env.SKIP_WEBHOOK_VERIFY !== 'true') {
-            const signature = req.headers['x-retell-signature'];
-            if (!Retell.verify(rawBody, apiKey, signature)) {
-                console.error('Invalid Retell webhook signature');
-                return res.status(401).send();
-            }
-        }
-
-        let payload;
-        try {
-            payload = JSON.parse(rawBody);
-        } catch {
-            return res.status(400).send();
-        }
-
-        const { event, call } = payload;
-
-        if (event === 'call_analyzed' && call?.call_id) {
-            try {
-                const result = await finalizeBookingFromCallId(call.call_id);
-                if (result.saved) {
-                    console.log(`Webhook booking saved: id=${result.booking_id}`);
-                }
-            } catch (err) {
-                console.error('Webhook MySQL insert failed:', err);
-                return res.status(500).send();
-            }
-        }
-
-        res.status(204).send();
-    }
-);
-
-// ── RETELL WEB CALL ORIGINATION ───────────────────────────────────────────────
-async function createWebCall(req, res) {
-    const apiKey = process.env.RETELL_API_KEY;
-    const agentId = process.env.RETELL_AGENT_ID || req.body?.agent_id;
-
-    if (!apiKey || !agentId) {
-        return res.status(500).json({
-            error: 'Missing RETELL_API_KEY or RETELL_AGENT_ID in .env',
-        });
-    }
-
+// ── SARVAM AUDIO PASS-THROUGH PROXY (Prevents Browser CORS Blocks) ────────────
+app.post('/api/voice-booking', upload.single('data'), async (req, res) => {
     try {
-        const response = await fetch('https://api.retellai.com/v2/create-web-call', {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${apiKey}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ agent_id: agentId }),
+        if (!req.file) {
+            return res.status(400).json({ error: 'No audio file payload received.' });
+        }
+
+        // Pack the audio buffer back into a secure form submission payload
+        const n8nForm = new FormData();
+        n8nForm.append('data', req.file.buffer, {
+            filename: 'voice_booking.webm',
+            contentType: 'audio/webm'
         });
 
-        const data = await response.json();
-        res.status(response.status).json(data);
+        console.log('[Backend Proxy] Forwarding audio file to n8n workflow pipeline...');
+        
+        // Post directly to n8n from the server-side architecture (No browser CORS rules apply here)
+        const response = await axios.post('http://localhost:5678/webhook/sarvam-chat-loop', n8nForm, {
+            headers: n8nForm.getHeaders()
+        });
+
+        // Send n8n processing response right back to the frontend client
+        return res.json(response.data);
+
     } catch (err) {
-        console.error('Retell create-web-call error:', err);
-        res.status(500).json({ error: 'Failed to create web call' });
+        console.error('[Backend Error] Pass-through communications failed:', err.message);
+        return res.status(500).json({ 
+            error: 'Failed to process audio loop through n8n pipeline', 
+            details: err.message 
+        });
     }
-}
+});
 
-app.post('/create-web-call', createWebCall);
-app.post('/create_web_call', createWebCall);
-
-// ── INITIALIZE SERVER (Local Fallback) ────────────────────────────────────────
+// ── INITIALIZE SERVER ────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server listening at http://localhost:${PORT}`);
     console.log(`Verify phone: POST /verify-phone`);
-    console.log(`Save booking after call: POST /api/bookings/finalize`);
-    console.log(`Retell webhook (optional): http://localhost:${PORT}/webhook/retell`);
+    console.log(`Sarvam Voice proxy pipeline destination: POST /api/voice-booking`);
 });
 
-// ── EXPORT FOR VERCEL SERVERLESS RUNTIME ──────────────────────────────────────
 module.exports = app;

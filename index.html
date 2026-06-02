@@ -70,6 +70,7 @@
             font-weight: 700;
             background: linear-gradient(to right, #312e81, #4f46e5);
             -webkit-background-clip: text;
+            background-clip: text; 
             -webkit-text-fill-color: transparent;
         }
 
@@ -104,7 +105,6 @@
             box-shadow: 0 0 8px var(--danger);
         }
 
-        /* Grid Layout */
         .main-grid {
             display: grid;
             grid-template-columns: 1fr 1.2fr;
@@ -132,10 +132,6 @@
             transition: transform 0.3s, box-shadow 0.3s;
         }
 
-        .glass-card:hover {
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.07);
-        }
-
         .card-header {
             display: flex;
             justify-content: space-between;
@@ -153,17 +149,6 @@
             display: flex;
             flex-direction: column;
             gap: 24px;
-        }
-
-        /* Voice Card */
-        .voice-card {
-            text-align: center;
-        }
-
-        .voice-card p.subtitle {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            margin-top: -6px;
         }
 
         .voice-controls {
@@ -184,43 +169,20 @@
             font-size: 1rem;
             font-weight: 700;
             cursor: pointer;
-            position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 6px;
             box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.3s ease;
             font-family: inherit;
-        }
-
-        .talk-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 12px 25px rgba(16, 185, 129, 0.4);
         }
 
         .talk-btn.active {
             background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3);
         }
 
-        .talk-btn.active:hover {
-            box-shadow: 0 12px 25px rgba(239, 68, 68, 0.4);
-        }
-
-        .talk-btn:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            background: #9ca3af;
-            box-shadow: none;
-        }
-
-        .btn-icon {
-            font-size: 1.6rem;
-        }
-
-        /* Sound Waves */
         .sound-wave-container {
             display: none;
             align-items: center;
@@ -231,9 +193,7 @@
             width: 100%;
         }
 
-        .sound-wave-container.active {
-            display: flex;
-        }
+        .sound-wave-container.active { display: flex; }
 
         .sound-wave-container .bar {
             width: 4px;
@@ -242,12 +202,9 @@
             border-radius: 2px;
             animation: soundWave 1.2s ease-in-out infinite;
         }
-
         .sound-wave-container .bar:nth-child(2) { animation-delay: 0.15s; height: 18px; }
         .sound-wave-container .bar:nth-child(3) { animation-delay: 0.3s; height: 28px; }
         .sound-wave-container .bar:nth-child(4) { animation-delay: 0.45s; height: 22px; }
-        .sound-wave-container .bar:nth-child(5) { animation-delay: 0.6s; height: 14px; }
-        .sound-wave-container .bar:nth-child(6) { animation-delay: 0.75s; height: 6px; }
 
         @keyframes soundWave {
             0%, 100% { transform: scaleY(1); }
@@ -256,7 +213,6 @@
 
         #save-status {
             font-size: 0.85rem;
-            color: #555;
             min-height: 1.4em;
             margin-top: 10px;
             padding: 8px;
@@ -266,7 +222,6 @@
         #save-status.ok { color: #10b981; background-color: var(--success-light); font-weight: 600; }
         #save-status.err { color: #ef4444; background-color: rgba(239, 68, 68, 0.08); }
 
-        /* Bookings List */
         .refresh-btn {
             background: none;
             border: none;
@@ -274,13 +229,6 @@
             font-size: 0.85rem;
             font-weight: 600;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .refresh-btn:hover {
-            color: var(--primary-hover);
-            text-decoration: underline;
         }
 
         .bookings-list-container {
@@ -289,15 +237,6 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            padding-right: 4px;
-        }
-
-        .bookings-list-container::-webkit-scrollbar {
-            width: 5px;
-        }
-        .bookings-list-container::-webkit-scrollbar-thumb {
-            background-color: #cbd5e1;
-            border-radius: 4px;
         }
 
         .booking-item-card {
@@ -309,113 +248,21 @@
             justify-content: space-between;
             align-items: center;
             font-size: 0.85rem;
-            transition: all 0.2s;
-        }
-        .booking-item-card:hover {
-            border-color: #cbd5e1;
-            background-color: #fafbfc;
         }
 
-        .booking-item-info h5 {
-            font-size: 0.9rem;
-            color: #1e1b4b;
-            margin-bottom: 2px;
-        }
-        .booking-item-info p {
-            color: var(--text-muted);
-            font-size: 0.8rem;
-        }
+        .booking-item-info h5 { font-size: 0.9rem; color: #1e1b4b; }
+        .booking-item-info p { color: var(--text-muted); font-size: 0.8rem; }
+        .booking-item-badge { background-color: var(--success-light); color: var(--success-hover); padding: 4px 8px; border-radius: 50px; font-weight: 600; font-size: 0.7rem; }
 
-        .booking-item-badge {
-            background-color: var(--success-light);
-            color: var(--success-hover);
-            padding: 4px 8px;
-            border-radius: 50px;
-            font-weight: 600;
-            font-size: 0.7rem;
-        }
-
-        .empty-state {
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            padding: 20px 0;
-            font-style: italic;
-        }
-
-        /* Chat Panel */
-        .right-column {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
-
-        .chat-card {
-            height: 460px;
-            display: flex;
-            flex-direction: column;
-            gap: 0;
-            padding: 0;
-            overflow: hidden;
-        }
-
-        .chat-header {
-            padding: 14px 20px;
-            background: white;
-            border-bottom: 1.5px solid var(--border-color);
-        }
-
-        .chat-agent-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .agent-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: var(--primary-light);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-        }
-
-        .chat-agent-info h4 {
-            font-size: 0.95rem;
-            color: #1e1b4b;
-        }
-
-        .agent-status {
-            font-size: 0.75rem;
-            color: var(--success);
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .agent-status::before {
-            content: '';
-            width: 5px;
-            height: 5px;
-            border-radius: 50%;
-            background-color: var(--success);
-            display: inline-block;
-        }
-
-        .reset-chat-btn {
-            background: none;
-            border: none;
-            font-size: 1rem;
-            cursor: pointer;
-            padding: 6px;
-            border-radius: 6px;
-            transition: background 0.2s;
-        }
-        .reset-chat-btn:hover {
-            background-color: var(--bg-light);
-        }
+        .right-column { display: flex; flex-direction: column; gap: 24px; }
+        .chat-card { height: 460px; display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+        .chat-header { padding: 14px 20px; background: white; border-bottom: 1.5px solid var(--border-color); }
+        .chat-agent-info { display: flex; align-items: center; gap: 12px; }
+        .agent-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--primary-light); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .chat-agent-info h4 { font-size: 0.95rem; color: #1e1b4b; }
+        .agent-status { font-size: 0.75rem; color: var(--success); display: flex; align-items: center; gap: 4px; }
+        .agent-status::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background-color: var(--success); }
+        .reset-chat-btn { background: none; border: none; font-size: 1rem; cursor: pointer; padding: 6px; }
 
         .chat-messages {
             flex: 1;
@@ -427,384 +274,61 @@
             background: #fafbfc;
         }
 
-        .chat-messages::-webkit-scrollbar {
-            width: 5px;
-        }
-        .chat-messages::-webkit-scrollbar-thumb {
-            background-color: #e2e8f0;
-            border-radius: 3px;
-        }
+        .msg { max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 0.9rem; line-height: 1.4; }
+        .msg.bot { align-self: flex-start; background-color: white; border: 1px solid var(--border-color); border-top-left-radius: 4px; color: var(--text-dark); }
+        .msg.user { align-self: flex-end; background-color: var(--primary); color: white; border-top-right-radius: 4px; }
 
-        .msg {
-            max-width: 85%;
-            padding: 10px 14px;
-            border-radius: 14px;
-            font-size: 0.9rem;
-            line-height: 1.4;
-            position: relative;
-            animation: popIn 0.25s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
-        }
-
-        @keyframes popIn {
-            from { opacity: 0; transform: translateY(8px) scale(0.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        .msg.bot {
-            align-self: flex-start;
-            background-color: white;
-            border: 1px solid var(--border-color);
-            border-top-left-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.01);
-            color: var(--text-dark);
-        }
-
-        .msg.user {
-            align-self: flex-end;
-            background-color: var(--primary);
-            color: white;
-            border-top-right-radius: 4px;
-            box-shadow: 0 3px 8px rgba(79, 70, 229, 0.2);
-        }
-
-        .typing-indicator {
-            display: flex;
-            gap: 4px;
-            padding: 10px 14px;
-            background-color: white;
-            border: 1px solid var(--border-color);
-            border-radius: 14px;
-            border-top-left-radius: 4px;
-            align-self: flex-start;
-            width: fit-content;
-        }
-
-        .typing-indicator span {
-            width: 7px;
-            height: 7px;
-            background-color: #94a3b8;
-            border-radius: 50%;
-            display: inline-block;
-            animation: bounce 1.4s infinite ease-in-out both;
-        }
-
+        .typing-indicator { display: flex; gap: 4px; padding: 10px 14px; background-color: white; border: 1px solid var(--border-color); border-radius: 14px; align-self: flex-start; }
+        .typing-indicator span { width: 7px; height: 7px; background-color: #94a3b8; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
         .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
         .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
 
-        @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
-        }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
 
-        /* Chat Inputs Area */
-        .chat-input-area {
-            padding: 14px 20px;
-            background: white;
-            border-top: 1.5px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            min-height: 75px;
-            justify-content: center;
-        }
-
-        .text-input-group {
-            display: flex;
-            width: 100%;
-            gap: 8px;
-        }
-
-        .chat-input {
-            flex: 1;
-            padding: 10px 14px;
-            border: 1.5px solid var(--border-color);
-            border-radius: 10px;
-            font-size: 0.9rem;
-            outline: none;
-            transition: border-color 0.2s;
-            font-family: inherit;
-        }
-        .chat-input:focus {
-            border-color: var(--primary);
-        }
-
-        .date-cal-btn {
+        .chat-input-area { 
+            padding: 14px 20px; 
+            background: white; 
+            border-top: 1.5px solid var(--border-color); 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+            max-height: 200px; 
+            overflow-y: auto; 
             flex-shrink: 0;
-            border: 1.5px solid var(--border-color);
-            border-radius: 10px;
-            width: 40px;
-            height: 40px;
-            background: white;
-            cursor: pointer;
-            font-size: 1.1rem;
-            line-height: 1;
         }
-        .date-cal-btn:hover {
-            border-color: var(--primary);
-        }
+        .text-input-group { display: flex; width: 100%; gap: 8px; }
+        .chat-input { flex: 1; padding: 10px 14px; border: 1.5px solid var(--border-color); border-radius: 10px; font-size: 0.9rem; outline: none; }
+        .send-btn { background-color: var(--primary); color: white; border: none; border-radius: 10px; width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
-        .date-picker-native {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            opacity: 0;
-            pointer-events: none;
-        }
+        .pill-container { display: flex; flex-wrap: wrap; gap: 8px; }
+        .chat-pill { background-color: var(--bg-light); border: 1px solid var(--border-color); padding: 8px 14px; border-radius: 50px; font-size: 0.85rem; cursor: pointer; font-weight: 500; color: var(--text-dark); }
+        .chat-pill.active { background-color: var(--primary); color: white; border-color: var(--primary); }
 
-        .send-btn {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            width: 40px;
-            height: 40px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-            transition: background 0.2s, transform 0.1s;
-        }
-        .send-btn:hover {
-            background-color: var(--primary-hover);
-        }
-        .send-btn:active {
-            transform: scale(0.95);
-        }
+        .meal-checkbox-group { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+        .meal-checkbox-label { display: flex; align-items: center; gap: 10px; background-color: var(--bg-light); border: 1.5px solid var(--border-color); padding: 10px 14px; border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 500; }
+        .meal-checkbox-label.checked { border-color: var(--primary); background-color: var(--primary-light); color: var(--primary); }
+        .meal-checkbox-label input { display: none; }
 
-        /* Pills and Selection Buttons */
-        .pill-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
+        .receipt-card { background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%); border: 1.5px dashed #cbd5e1; }
+        .receipt-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #cbd5e1; padding-bottom: 10px; }
+        .receipt-badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 50px; font-weight: 600; background-color: #e2e8f0; color: #64748b; }
+        .receipt-badge.complete { background-color: var(--success-light); color: var(--success-hover); }
+        .receipt-body { display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; }
+        .receipt-item { display: flex; justify-content: space-between; }
+        .receipt-item .label { color: var(--text-muted); }
+        .receipt-item .val { font-weight: 600; color: #1e1b4b; }
+        .receipt-dashed { border-top: 1px dashed #cbd5e1; margin: 6px 0; width: 100%; }
+        .receipt-status-text { text-align: center; font-size: 0.75rem; color: var(--text-muted); font-style: italic; }
 
-        .chat-pill {
-            background-color: var(--bg-light);
-            border: 1px solid var(--border-color);
-            padding: 8px 14px;
-            border-radius: 50px;
-            font-size: 0.85rem;
-            font-family: inherit;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: var(--text-dark);
-            font-weight: 500;
-        }
-        .chat-pill:hover {
-            background-color: #cbd5e1;
-            border-color: #cbd5e1;
-        }
-        .chat-pill.active {
-            background-color: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
-        /* Dropdown custom */
-        .chat-select {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1.5px solid var(--border-color);
-            border-radius: 10px;
-            font-size: 0.9rem;
-            outline: none;
-            background-color: white;
-            font-family: inherit;
-            cursor: pointer;
-        }
-        .chat-select:focus {
-            border-color: var(--primary);
-        }
-
-        /* Number Counter Control */
-        .counter-group {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            justify-content: center;
-            padding: 4px 0;
-            width: 100%;
-        }
-        .counter-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            border: 1.5px solid var(--border-color);
-            background: white;
-            font-size: 1.2rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-        .counter-btn:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-        .counter-val {
-            font-size: 1.1rem;
-            font-weight: 600;
-            min-width: 25px;
-            text-align: center;
-        }
-
-        /* Checkbox list for meals */
-        .meal-checkbox-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            width: 100%;
-        }
-        .meal-checkbox-label {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background-color: var(--bg-light);
-            border: 1.5px solid var(--border-color);
-            padding: 10px 14px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-        .meal-checkbox-label:hover {
-            border-color: #cbd5e1;
-        }
-        .meal-checkbox-label.checked {
-            border-color: var(--primary);
-            background-color: var(--primary-light);
-            color: var(--primary);
-        }
-        .meal-checkbox-label input {
-            display: none;
-        }
-
-        /* Live Preview Receipt */
-        .receipt-card {
-            background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
-            border: 1.5px dashed #cbd5e1;
-            position: relative;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.01);
-            gap: 12px;
-        }
-        .receipt-card::before {
-            content: '';
-            position: absolute;
-            top: -6px;
-            left: 0;
-            right: 0;
-            height: 6px;
-            background: radial-gradient(circle, transparent, transparent 50%, #fafbfc 50%, #fafbfc 100%) 0 0 / 12px 12px repeat-x;
-        }
-
-        .receipt-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px dashed #cbd5e1;
-            padding-bottom: 10px;
-        }
-        .receipt-header h4 {
-            font-size: 0.95rem;
-            color: #1e1b4b;
-        }
-        .receipt-badge {
-            font-size: 0.7rem;
-            padding: 2px 8px;
-            border-radius: 50px;
-            font-weight: 600;
-            background-color: #e2e8f0;
-            color: #64748b;
-        }
-        .receipt-badge.complete {
-            background-color: var(--success-light);
-            color: var(--success-hover);
-        }
-
-        .receipt-body {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            font-size: 0.85rem;
-        }
-        .receipt-item {
-            display: flex;
-            justify-content: space-between;
-        }
-        .receipt-item .label {
-            color: var(--text-muted);
-        }
-        .receipt-item .val {
-            font-weight: 600;
-            color: #1e1b4b;
-        }
-
-        .receipt-dashed {
-            border-top: 1px dashed #cbd5e1;
-            margin: 6px 0;
-            width: 100%;
-        }
-
-        .receipt-status-text {
-            text-align: center;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            font-style: italic;
-        }
-
-        /* Bottom Phone Container */
-        .bottom-phone-container {
-            position: fixed;
-            bottom: 25px;
-            right: 25px;
-            z-index: 100;
-        }
-        .bottom-phone-btn {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background-color: var(--success);
-            color: white;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.4);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 16px;
-            transition: all 0.2s ease;
-        }
-        .bottom-phone-btn:hover {
-            transform: scale(1.06);
-        }
-        .bottom-phone-btn.active {
-            background-color: var(--danger);
-            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
-        }
-
-        /* Animations */
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-4px); }
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .hidden {
-            display: none !important;
-        }
+        .bottom-phone-container { position: fixed; bottom: 25px; right: 25px; z-index: 100; }
+        .bottom-phone-btn { width: 44px; height: 44px; border-radius: 50%; background-color: var(--success); color: white; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     </style>
 </head>
 <body>
 
     <div class="app-container">
-        <!-- Header -->
         <header class="app-header">
             <div class="header-logo">
                 <span class="logo-emoji">🧘</span>
@@ -816,11 +340,8 @@
             </div>
         </header>
 
-        <!-- Main Dashboard Grid -->
         <div class="main-grid">
-            <!-- Left Column: Voice Assistant & Recent Bookings -->
             <div class="left-column">
-                <!-- Voice Assistant Card -->
                 <div class="glass-card voice-card">
                     <div class="card-header">
                         <h3>🎙️ વોઇસ આસિસ્ટન્ટ (મોખિક બુકિંગ)</h3>
@@ -833,21 +354,15 @@
                             <span class="btn-text">વાત કરો</span>
                         </button>
                         
-                        <!-- Sound Waves Visualizer -->
                         <div class="sound-wave-container" id="sound-wave">
-                            <div class="bar"></div>
-                            <div class="bar"></div>
-                            <div class="bar"></div>
                             <div class="bar"></div>
                             <div class="bar"></div>
                             <div class="bar"></div>
                         </div>
                     </div>
-                    
                     <p id="save-status" aria-live="polite"></p>
                 </div>
 
-                <!-- Recent Bookings Card -->
                 <div class="glass-card bookings-card">
                     <div class="card-header">
                         <h3>📋 તાજેતરના બુકિંગ્સ</h3>
@@ -859,9 +374,7 @@
                 </div>
             </div>
 
-            <!-- Right Column: Chat Assistant & Receipt Preview -->
             <div class="right-column">
-                <!-- Chat Assistant Card -->
                 <div class="glass-card chat-card">
                     <div class="chat-header">
                         <div class="card-header" style="border-bottom: none; padding-bottom: 0;">
@@ -876,18 +389,10 @@
                         </div>
                     </div>
                     
-                    <!-- Chat Messages Feed -->
-                    <div class="chat-messages" id="chat-messages">
-                        <!-- Messages dynamically added here -->
-                    </div>
-                    
-                    <!-- Input Controls (Dynamic) -->
-                    <div class="chat-input-area" id="chat-input-area">
-                        <!-- Dynamic inputs populated by JS -->
-                    </div>
+                    <div class="chat-messages" id="chat-messages"></div>
+                    <div class="chat-input-area" id="chat-input-area"></div>
                 </div>
 
-                <!-- Live Booking Receipt -->
                 <div class="glass-card receipt-card">
                     <div class="receipt-header">
                         <h4>🎫 બુકિંગ રસીદ (Live Preview)</h4>
@@ -898,11 +403,6 @@
                         <div class="receipt-item"><span class="label">ફોન નંબર:</span> <span class="val" id="rec-phone">-</span></div>
                         <div class="receipt-item"><span class="label">ચેક-ઇન તારીખ:</span> <span class="val" id="rec-start">-</span></div>
                         <div class="receipt-item"><span class="label">ચેક-આઉટ તારીખ:</span> <span class="val" id="rec-end">-</span></div>
-                        <div class="receipt-item"><span class="label">કુલ વ્યક્તિ:</span> <span class="val" id="rec-persons">1</span></div>
-                        <div class="receipt-item"><span class="label">રૂમ જોઈએ છે?:</span> <span class="val" id="rec-room">ના</span></div>
-                        <div class="receipt-item" id="rec-floor-row" style="display:none;"><span class="label">ફ્લોર પસંદગી:</span> <span class="val" id="rec-floor">-</span></div>
-                        <div class="receipt-item"><span class="label">શિબિરનું નામ:</span> <span class="val" id="rec-shibir">-</span></div>
-                        <div class="receipt-item" id="rec-swadhyay-row" style="display:none;"><span class="label">સ્વાધ્યાયકર્તા:</span> <span class="val" id="rec-swadhyay">-</span></div>
                         <div class="receipt-item"><span class="label">ભોજન વ્યવસ્થા:</span> <span class="val" id="rec-meals">-</span></div>
                         <div class="receipt-item"><span class="label">ભોજન પસંદગી:</span> <span class="val" id="rec-diet">-</span></div>
                     </div>
@@ -915,111 +415,111 @@
         </div>
     </div>
 
-    <!-- Floating widget at the bottom (original element preserved) -->
     <div class="bottom-phone-container">
         <button id="bottom-phone-widget" class="bottom-phone-btn">📞</button>
     </div>
 
-    <script type="module">
-        import { RetellWebClient } from 'https://cdn.jsdelivr.net/npm/retell-client-js-sdk@2.0.7/+esm';
+    <script>
+        // ==========================================
+        // SARVAM AUDIO STREAM & WEBHOOK COUPLING LOGIC
+        // ==========================================
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
 
-        // Voice Retell Setup
-        const retellWebClient = new RetellWebClient();
         const mainBtn = document.getElementById('vapi-btn');
         const widgetBtn = document.getElementById('bottom-phone-widget');
         const saveStatus = document.getElementById('save-status');
-        let isCalling = false;
-        let currentCallId = null;
-        let audioStarted = false;
+        const soundWave = document.getElementById('sound-wave');
 
-        setupRetellListeners();
+        mainBtn.addEventListener('click', toggleRecordingFlow);
+        widgetBtn.addEventListener('click', toggleRecordingFlow);
 
-        /** Ensure mic permission before Retell connects (avoids silent publish). */
-        async function ensureMicrophoneReady() {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    autoGainControl: true,
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    channelCount: 1,
-                },
-            });
-            stream.getTracks().forEach((t) => t.stop());
-        }
-
-        mainBtn.addEventListener('click', handleCallFlowToggle);
-        widgetBtn.addEventListener('click', handleCallFlowToggle);
-
-        async function handleCallFlowToggle() {
-            if (!isCalling) {
-                setLoadingUIState();
-                setSaveStatus('');
-
+        async function toggleRecordingFlow() {
+            if (!isRecording) {
                 try {
-                    const response = await fetch('/create-web-call', { method: 'POST' });
-                    const data = await response.json();
+                    setLoadingUIState();
+                    setSaveStatus('');
+                    audioChunks = [];
 
-                    if (!response.ok || !data.access_token) {
-                        const msg = data.message || data.error || `Server returned ${response.status}`;
-                        throw new Error(msg);
-                    }
-
-                    currentCallId = data.call_id || null;
-                    audioStarted = false;
-
-                    await ensureMicrophoneReady();
-                    await retellWebClient.startCall({
-                        accessToken: data.access_token,
+                    // 1. Request microphone access natively from browser
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        audio: {
+                            autoGainControl: true,
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            channelCount: 1
+                        } 
                     });
-                } catch (error) {
-                    console.error('Retell connection error:', error);
-                    alert(`જોડાણ નિષ્ફળ: ${error.message}`);
+
+                    // 2. Initialize MediaRecorder with standard webm audio container mapping
+                    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                    
+                    mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) audioChunks.push(event.data);
+                    };
+
+                    mediaRecorder.onstop = async () => {
+                        // Compile the chunks into a unified audio blob configuration
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        stream.getTracks().forEach(track => track.stop()); // Release mic handle
+                        
+                        await sendAudioToSarvamPipeline(audioBlob);
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+                    
+                    // 3. Update UI states
+                    updateVoiceButton('🛑', 'બંધ કરો', true);
+                    widgetBtn.innerText = '🛑';
+                    widgetBtn.classList.add('active');
+                    soundWave.classList.add('active');
+                    mainBtn.disabled = false;
+                    widgetBtn.disabled = false;
+
+                } catch (err) {
+                    console.error('Microphone initialization crash:', err);
+                    alert('માઇક્રોફોન કનેક્શન નિષ્ફળ થયું. મહેરબાની કરીને પરવાનગી ચકાસો.');
                     resetButtonUIState();
                 }
             } else {
-                retellWebClient.stopCall();
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stop();
+                }
             }
         }
 
-        function setupRetellListeners() {
-            retellWebClient.on('call_started', () => {
-                isCalling = true;
-                updateVoiceButton('🛑', 'બંધ કરો', true);
-                mainBtn.disabled = false;
-                widgetBtn.innerText = '🛑';
-                widgetBtn.classList.add('active');
-                widgetBtn.disabled = false;
-                document.getElementById('sound-wave').classList.add('active');
-            });
+        async function sendAudioToSarvamPipeline(blob) {
+            setSaveStatus('બુકિંગ સેવ થાય છે...');
+            updateVoiceButton('⏳', 'બુકિંગ સેવ થાય છે...');
+            mainBtn.disabled = true;
+            widgetBtn.disabled = true;
 
-            retellWebClient.on('call_ready', async () => {
-                if (!audioStarted) {
-                    audioStarted = true;
-                    try {
-                        await retellWebClient.startAudioPlayback();
-                    } catch (e) {
-                        console.warn('Audio playback:', e);
-                    }
-                }
-            });
+            // Prepare multipart form data for n8n Webhook input binary property "data"
+            const formData = new FormData();
+            formData.append('data', blob, 'voice_booking.webm');
 
-            retellWebClient.on('call_ended', async () => {
-                document.getElementById('sound-wave').classList.remove('active');
-                if (currentCallId) {
-                    const callId = currentCallId;
-                    currentCallId = null;
-                    await saveBookingToDatabase(callId);
-                } else {
-                    resetButtonUIState();
-                }
-            });
+            try {
+                // Post directly to your local n8n Webhook URL
+                const response = await fetch('/api/voice-booking', {
+                    method: 'POST',
+                    body: formData
+                });
 
-            retellWebClient.on('error', (err) => {
-                console.error('Retell error:', err);
-                currentCallId = null;
-                document.getElementById('sound-wave').classList.remove('active');
+                if (!response.ok) throw new Error(`Server returned status: ${response.status}`);
+
+                const result = await response.json();
+                setSaveStatus('બુકિંગ સેવ થઈ ગઈ!', 'ok');
+                loadRecentBookings(); 
+                
+            } catch (err) {
+                console.error('Pipeline execution failed:', err);
+                setSaveStatus(`ભૂલ: ${err.message}`, 'err');
+            } finally {
                 resetButtonUIState();
-            });
+                soundWave.classList.remove('active');
+            }
         }
 
         function setSaveStatus(text, type = '') {
@@ -1027,60 +527,12 @@
             saveStatus.className = type;
         }
 
-        async function saveBookingToDatabase(callId) {
-            setSaveStatus('બુકિંગ સેવ થાય છે...');
-            updateVoiceButton('⏳', 'બુકિંગ સેવ થાય છે...');
-            mainBtn.disabled = true;
-            widgetBtn.disabled = true;
-
-            try {
-                const response = await fetch('/api/bookings/finalize', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ call_id: callId }),
-                    signal: AbortSignal.timeout(5000),
-                });
-
-                let result = {};
-                const text = await response.text();
-                if (text) {
-                    try {
-                        result = JSON.parse(text);
-                    } catch {
-                        throw new Error(response.status === 404
-                            ? 'સર્વર જૂનો છે — npm start ફરી ચલાવો'
-                            : text.slice(0, 120));
-                    }
-                }
-
-                if (!response.ok) {
-                    throw new Error(result.error || result.message || `Server ${response.status}`);
-                }
-
-                if (result.saved) {
-                    setSaveStatus(`બુકિંગ સેવ થઈ! Booking ID: ${result.booking_id}`, 'ok');
-                    loadRecentBookings(); // Auto refresh recent bookings list
-                } else {
-                    setSaveStatus(result.reason || 'બુકિંગ સેવ ન થઈ — બધી વિગતો ભરાઈ નથી', 'err');
-                }
-            } catch (error) {
-                console.error('Save booking error:', error);
-                setSaveStatus(`ભૂલ: ${error.message}`, 'err');
-            } finally {
-                resetButtonUIState();
-            }
-        }
-
         function updateVoiceButton(icon, text, isActive = false) {
             const iconEl = mainBtn.querySelector('.btn-icon');
             const textEl = mainBtn.querySelector('.btn-text');
             if (iconEl) iconEl.textContent = icon;
             if (textEl) textEl.textContent = text;
-            if (isActive) {
-                mainBtn.classList.add('active');
-            } else {
-                mainBtn.classList.remove('active');
-            }
+            if (isActive) mainBtn.classList.add('active'); else mainBtn.classList.remove('active');
         }
 
         function setLoadingUIState() {
@@ -1091,7 +543,7 @@
         }
 
         function resetButtonUIState() {
-            isCalling = false;
+            isRecording = false;
             updateVoiceButton('📞', 'વાત કરો');
             mainBtn.disabled = false;
             widgetBtn.innerText = '📞';
@@ -1099,12 +551,9 @@
             widgetBtn.disabled = false;
         }
 
-
         // ==========================================
-        // CHAT BOOKING SYSTEM LOGIC
+        // EXCLUSIVE CHAT CONFIGURATION FLOW
         // ==========================================
-
-        let availableShibirs = [];
         const bookingState = {
             step: 0,
             data: {
@@ -1112,11 +561,6 @@
                 mumukshu_phone: '',
                 start_date: '',
                 end_date: '',
-                total_persons: 1,
-                wants_room: false,
-                floor_preference: '',
-                booked_shibir: '',
-                swadhyay_karta: '',
                 has_breakfast: false,
                 has_lunch: false,
                 has_dinner: false,
@@ -1126,135 +570,60 @@
 
         const QUESTIONS = [
             {
-                id: 'mumukshu_name',
-                text: "નમસ્કાર! શ્રીમદ રાજચંદ્ર આત્મ તત્વ રિસર્ચ સેન્ટરમાં આપનું સ્વાગત છે. હું તમારી બુકિંગ માટે મદદ કરીશ. કૃપા કરીને તમારું શુભ નામ લખો.",
-                type: 'text',
-                placeholder: 'તમારું આખું નામ લખો...',
-                validate: (val) => val && val.trim().length > 1 ? null : 'મહેરબાની કરીને સાચું નામ લખો.'
-            },
-            {
                 id: 'mumukshu_phone',
-                text: (data) => `આભાર ${data.mumukshu_name}! હવે તમારો ફોન નંબર (૧૦ અંકનો) જણાવો.`,
+                text: "નમસ્કાર! શ્રીમદ રાજચંદ્ર આત્મ તત્વ રિસર્ચ સેન્ટરમાં આપનું સ્વાગત છે. હું તમારી બુકિંગ માટે મદદ કરીશ. કૃપા કરીને તમારો ૧૦-અંકનો રજિસ્ટર્ડ ફોન નંબર જણાવો.",
                 type: 'tel',
                 placeholder: 'તમારો ૧૦-અંકનો ફોન નંબર...',
-                validate: (val) => {
-                    const clean = val.replace(/\D/g, '');
-                    return clean.length >= 10 ? null : 'કૃપા કરીને ૧૦ અંકનો સાચો ફોન નંબર લખો.';
+                validateAsync: async (val) => {
+                    const clean = val.replace(/\D/g, '').replace(/^91/, '').slice(-10);
+                    if (clean.length < 10) return 'કૃપા કરીને ૧૦ અંકનો સાચો ફોન નંબર લખો.';
+                    
+                    try {
+                        const response = await fetch('/verify-phone', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ phone: clean })
+                        });
+                        const dbResult = await response.json();
+                        if (dbResult.found) {
+                            bookingState.data.mumukshu_name = dbResult.name;
+                            bookingState.data.centre_name = dbResult.centre_name;
+                            return null;
+                        } else {
+                            return 'માફ કરશો, આ ફોન નંબર રજિસ્ટર્ડ નથી. કૃપા કરીને સાચો નંબર લખો.';
+                        }
+                    } catch (err) {
+                        return 'સિસ્ટમ કનેક્શનમાં ખામી છે, કૃપા કરીને ફરી પ્રયાસ કરો.';
+                    }
                 }
             },
             {
                 id: 'start_date',
-                text: "તમે કઈ તારીખે અહીં પધારવા ઈચ્છો છો? (ચેક-ઇન તારીખ)",
-                type: 'date',
-                min: () => {
+                text: (data) => `જય જિનેન્દ્ર, ${data.mumukshu_name} (${data.centre_name})! આપની વિગતો મળી ગઈ છે. <br><br>કૃપા કરીને તમારી ચેક-ઇન અને ચેક-આઉટ તારીખો જણાવો (દા.ત. 01 - 06 June):`,
+                type: 'text',
+                placeholder: '01 - 06 June અથવા 03 June...',
+                validate: (val) => {
+                    const parsed = parseDateRangeText(val);
+                    if (!parsed) return "તારીખો સમજી શકાઈ નથી. કૃપા કરીને '01 - 06 June' અથવા '03 June' જેવી રીતે લખો.";
+                    
+                    const start = new Date(parsed.start);
+                    const end = new Date(parsed.end);
                     const today = new Date();
-                    return today.toISOString().split('T')[0];
-                },
-                validate: (val) => val ? null : 'કૃપા કરીને ચેક-ઇન તારીખ પસંદ કરો.'
-            },
-            {
-                id: 'end_date',
-                text: "તમે કઈ તારીખે પરત જવા ઈચ્છો છો? (ચેક-આઉટ તારીખ)",
-                type: 'date',
-                min: (data) => {
-                    if (!data.start_date) return '';
-                    const start = new Date(data.start_date);
-                    start.setDate(start.getDate() + 1);
-                    return start.toISOString().split('T')[0];
-                },
-                max: (data) => {
-                    if (!data.start_date) return '';
-                    const start = new Date(data.start_date);
-                    start.setDate(start.getDate() + 9);
-                    return start.toISOString().split('T')[0];
-                },
-                validate: (val, data) => {
-                    if (!val) return 'કૃપા કરીને ચેક-આઉટ તારીખ પસંદ કરો.';
-                    if (data.start_date) {
-                        const start = new Date(data.start_date);
-                        const end = new Date(val);
-                        if (end <= start) {
-                            return 'ચેક-આઉટ તારીખ ચેક-ઇન તારીખ પછીની હોવી જોઈએ.';
-                        }
-                        const diffTime = end - start;
-                        const diffDays = diffTime / (1000 * 60 * 60 * 24);
-                        if (diffDays > 9) {
-                            return 'તમે એક સમયે વધુમાં વધુ ૯ દિવસ માટે જ બુકિંગ કરાવી શકો છો.';
-                        }
-                    }
+                    today.setHours(0,0,0,0);
+                    
+                    if (start < today) return 'ચેક-ઇન તારીખ આજની અથવા પછીની હોવી જોઈએ.';
+                    if (end <= start) return 'ચેક-આઉટ તારીખ ચેક-ઇન પછીની હોવી જોઈએ.';
+                    
+                    const diffDays = (end - start) / (1000 * 60 * 60 * 24);
+                    if (diffDays > 9) return 'તમે વધુમાં વધુ ૯ દિવસ માટે જ બુકિંગ કરાવી શકો છો.';
+                    
                     return null;
                 }
             },
             {
-                id: 'total_persons',
-                text: "કુલ કેટલા વ્યક્તિઓ આવવાના છે?",
-                type: 'counter',
-                min: 1,
-                max: 100,
-                default: 1
-            },
-            {
-                id: 'wants_room',
-                text: "શું આપને રહેવા માટે રૂમની વ્યવસ્થાની જરૂરિયાત છે?",
-                type: 'pills',
-                options: [
-                    { label: 'હા, રૂમ જોઈએ છે', value: true },
-                    { label: 'ના, રૂમ નથી જોતો', value: false }
-                ]
-            },
-            {
-                id: 'floor_preference',
-                text: "રૂમ માટે આપની ફ્લોરની કોઈ ખાસ પસંદગી છે?",
-                type: 'pills',
-                options: [
-                    { label: 'ગ્રાઉન્ડ ફ્લોર (ભોંયતળિયું)', value: 'Ground Floor' },
-                    { label: 'પહેલો માળ', value: 'First Floor' },
-                    { label: 'કોઈપણ માળ ચાલે', value: 'Any Floor' }
-                ],
-                condition: (data) => data.wants_room === true
-            },
-            {
-                id: 'booked_shibir',
-                text: "તમે કઈ શિબિરમાં ભાગ લેવાના છો? નીચેની યાદીમાંથી શિબિર પસંદ કરો:",
-                type: 'shibir-select',
-                options: () => {
-                    const list = availableShibirs.map(s => ({ label: s.shibir_name, value: s.shibir_name }));
-                    return [
-                        { label: 'કોઈ શિબિર નથી', value: '' },
-                        ...list,
-                        { label: 'અન્ય શિબિર (મેન્યુઅલ લખો)', value: 'OTHER' }
-                    ];
-                }
-            },
-            {
-                id: 'swadhyay_karta',
-                text: "આ નવી શિબિરના સ્વાધ્યાયકર્તાનું નામ શું છે?",
-                type: 'text',
-                placeholder: 'સ્વાધ્યાયકર્તાનું નામ લખો...',
-                condition: (data) => data.booked_shibir && data.booked_shibir !== '' && !availableShibirs.some(s => s.shibir_name === data.booked_shibir),
-                validate: (val) => val && val.trim().length > 1 ? null : 'મહેરબાની કરીને સ્વાધ્યાયકર્તાનું નામ લખો.'
-            },
-
-            {
-                id: 'meals',
-                text: "ભોજન વ્યવસ્થામાં તમારે કયા ભોજનનો સમાવેશ કરવો છે? (યોગ્ય વિકલ્પો પસંદ કરો)",
-                type: 'meals-checkbox',
-                options: [
-                    { id: 'breakfast', label: 'સવારનો નાસ્તો (Breakfast)' },
-                    { id: 'lunch', label: 'બપોરનું લંચ (Lunch)' },
-                    { id: 'dinner', label: 'સાંજનું ડિનર (Dinner)' }
-                ]
-            },
-            {
-                id: 'dietary_preference',
-                text: "ભોજનમાં કોઈ ખાસ પસંદગી છે? (જેમ કે જૈન, સ્વામિનારાયણ, વગેરે)",
-                type: 'pills',
-                options: [
-                    { label: 'રેગ્યુલર (Regular)', value: 'Regular' },
-                    { label: 'જૈન (Jain)', value: 'Jain' },
-                    { label: 'સ્વામિનારાયણ (Swaminarayan)', value: 'Swaminarayan' },
-                    { label: 'અન્ય', value: 'Other' }
-                ]
+                id: 'combined_food',
+                text: "સરસ! હવે ભોજન વ્યવstwa જણાવો: આપને કયા ભોજન જોઈશે? (Breakfast, Lunch, Dinner બધું જ રાખવું છે?) તેમજ તમારી ભોજન પસંદગી 'Regular' જોઈશે કે 'Non-spicy'?",
+                type: 'meals-combined'
             },
             {
                 id: 'confirmation',
@@ -1262,6 +631,55 @@
                 type: 'confirm-buttons'
             }
         ];
+
+        function parseDateRangeText(input) {
+            const cleanInput = input.trim().replace(/\s+/g, ' ');
+            const currentYear = 2026;
+
+            const rangeRegex = /(\d{1,2})\s*(?:-|to)\s*(\d{1,2})\s*([a-zA-Z]+)/i;
+            const rangeMatch = cleanInput.match(rangeRegex);
+            
+            if (rangeMatch) {
+                const startDay = parseInt(rangeMatch[1], 10);
+                const endDay = parseInt(rangeMatch[2], 10);
+                const monthName = rangeMatch[3];
+                
+                const startDateObj = new Date(`${startDay} ${monthName} ${currentYear}`);
+                const endDateObj = new Date(`${endDay} ${monthName} ${currentYear}`);
+                
+                if (!isNaN(startDateObj.getTime()) && !isNaN(endDateObj.getTime())) {
+                    return {
+                        start: startDateObj.toISOString().split('T')[0],
+                        end: endDateObj.toISOString().split('T')[0]
+                    };
+                }
+            }
+
+            const singleRegex = /(\d{1,2})\s*([a-zA-Z]+)/i;
+            const singleMatch = cleanInput.match(singleRegex);
+            
+            if (singleMatch) {
+                const startDay = parseInt(singleMatch[1], 10);
+                const monthName = singleMatch[2];
+                
+                const startDateObj = new Date(`${startDay} ${monthName} ${currentYear}`);
+                if (!isNaN(startDateObj.getTime())) {
+                    const endDateObj = new Date(startDateObj);
+                    endDateObj.setDate(startDateObj.getDate() + 1);
+                    return {
+                        start: startDateObj.toISOString().split('T')[0],
+                        end: endDateObj.toISOString().split('T')[0]
+                    };
+                }
+            }
+
+            const isoRegex = /(\d{4}-\d{2}-\d{2})/g;
+            const isoMatches = cleanInput.match(isoRegex);
+            if (isoMatches && isoMatches.length >= 2) {
+                return { start: isoMatches[0], end: isoMatches[1] };
+            }
+            return null;
+        }
 
         async function checkDbHealth() {
             const dot = document.getElementById('db-status-dot');
@@ -1297,33 +715,19 @@
                         <div class="booking-item-info">
                             <h5>${escapeHtml(b.mumukshu_name)}</h5>
                             <p>📞 ${escapeHtml(b.mumukshu_phone)} | 📅 ${formatDate(b.start_date)} થી ${formatDate(b.end_date)}</p>
-                            <p style="font-size:0.75rem; color:#888; margin-top:2px;">વ્યક્તિ: ${b.total_persons} | શિબિર: ${escapeHtml(b.booked_shibir || 'કોઈ નહીં')}</p>
                         </div>
                         <div class="booking-item-badge">ID: ${b.booking_id}</div>
                     </div>
                 `).join('');
             } catch (e) {
-                listContainer.innerHTML = `<p class="empty-state" style="color:var(--danger);">બુકિંગ્સ લોડ કરવામાં ભૂલ: ${e.message}</p>`;
-            }
-        }
-
-        async function loadShibirs() {
-            try {
-                const res = await fetch('/api/shibirs');
-                if (res.ok) {
-                    availableShibirs = await res.json();
-                }
-            } catch (e) {
-                console.error('Failed to load shibirs:', e);
+                listContainer.innerHTML = `<p class="empty-state">બુકિંગ્સ લોડ કરવામાં ભૂલ આવી છે.</p>`;
             }
         }
 
         function getActiveQuestion() {
             while (bookingState.step < QUESTIONS.length) {
                 const q = QUESTIONS[bookingState.step];
-                if (!q.condition || q.condition(bookingState.data)) {
-                    return q;
-                }
+                if (!q.condition || q.condition(bookingState.data)) return q;
                 bookingState.step++;
             }
             return null;
@@ -1336,12 +740,8 @@
 
         function addMessage(sender, text) {
             const feed = document.getElementById('chat-messages');
-            
-            // Remove typing indicator if exists
             const existingIndicator = document.getElementById('typing-indicator');
-            if (existingIndicator) {
-                existingIndicator.remove();
-            }
+            if (existingIndicator) existingIndicator.remove();
 
             const msg = document.createElement('div');
             msg.className = `msg ${sender}`;
@@ -1353,7 +753,6 @@
         function showTypingIndicator() {
             const feed = document.getElementById('chat-messages');
             if (document.getElementById('typing-indicator')) return;
-
             const indicator = document.createElement('div');
             indicator.id = 'typing-indicator';
             indicator.className = 'typing-indicator';
@@ -1364,9 +763,7 @@
 
         function hideTypingIndicator() {
             const indicator = document.getElementById('typing-indicator');
-            if (indicator) {
-                indicator.remove();
-            }
+            if (indicator) indicator.remove();
         }
 
         function showNextQuestion() {
@@ -1375,7 +772,6 @@
 
             const inputArea = document.getElementById('chat-input-area');
             inputArea.innerHTML = '';
-
             showTypingIndicator();
 
             setTimeout(() => {
@@ -1386,119 +782,42 @@
             }, 600);
         }
 
-        function dateDigits(value) {
-            return value.replace(/\D/g, '').slice(0, 8);
-        }
-
-        /** DDMMYYYY digit stream → DD/MM/YYYY */
-        function formatDmyFromDigits(digits) {
-            if (!digits) return '';
-            let out = digits.slice(0, 2);
-            if (digits.length > 2) out += '/' + digits.slice(2, 4);
-            if (digits.length > 4) out += '/' + digits.slice(4, 8);
-            return out;
-        }
-
-        function countDigitsBefore(str, pos) {
-            let n = 0;
-            for (let i = 0; i < pos && i < str.length; i++) {
-                if (/\d/.test(str[i])) n++;
-            }
-            return n;
-        }
-
-        function cursorAfterDigits(formatted, digitCount) {
-            if (digitCount <= 0) return 0;
-            let seen = 0;
-            for (let i = 0; i < formatted.length; i++) {
-                if (/\d/.test(formatted[i])) {
-                    seen++;
-                    if (seen >= digitCount) return i + 1;
-                }
-            }
-            return formatted.length;
-        }
-
-        function padDmyDateParts(str) {
-            const m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-            if (!m) return str;
-            return `${m[1].padStart(2, '0')}/${m[2].padStart(2, '0')}/${m[3]}`;
-        }
-
-        function dmyToIso(dmy) {
-            const m = dmy.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-            if (!m) return '';
-            return `${m[3]}-${m[2]}-${m[1]}`;
-        }
-
-        function isoToDmy(iso) {
-            const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-            if (!m) return '';
-            return `${m[3]}/${m[2]}/${m[1]}`;
-        }
-
-        function isValidIsoDate(iso) {
-            if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
-            const [y, mo, d] = iso.split('-').map(Number);
-            const dt = new Date(`${iso}T12:00:00`);
-            return dt.getFullYear() === y && dt.getMonth() + 1 === mo && dt.getDate() === d;
-        }
-
-        function isValidDmyDate(dmy) {
-            const iso = dmyToIso(padDmyDateParts(dmy));
-            return iso && isValidIsoDate(iso);
-        }
-
-        /** DD/MM/YYYY typing (e.g. day 30 stays 30); hidden type=date stores ISO for calendar. */
-        function attachDmyDateTyping(textInput, pickerInput) {
-            textInput.addEventListener('input', () => {
-                const digitsBefore = countDigitsBefore(textInput.value, textInput.selectionStart);
-                const digits = dateDigits(textInput.value);
-                const formatted = formatDmyFromDigits(digits);
-                textInput.value = formatted;
-                const newPos = cursorAfterDigits(formatted, digitsBefore);
-                textInput.setSelectionRange(newPos, newPos);
-                if (/^\d{2}\/\d{2}\/\d{4}$/.test(formatted)) {
-                    const iso = dmyToIso(formatted);
-                    if (isValidIsoDate(iso)) pickerInput.value = iso;
-                }
-            });
-
-            textInput.addEventListener('blur', () => {
-                if (textInput.value.includes('/')) {
-                    textInput.value = padDmyDateParts(textInput.value);
-                }
-                if (isValidDmyDate(textInput.value)) {
-                    pickerInput.value = dmyToIso(textInput.value);
-                }
-            });
-
-            pickerInput.addEventListener('change', () => {
-                if (pickerInput.value) {
-                    textInput.value = isoToDmy(pickerInput.value);
-                }
-            });
-        }
-
-        function handleInputSubmit(value, displayValue = null, skipDataUpdate = false) {
+        async function handleInputSubmit(value, displayValue = null, skipDataUpdate = false) {
             const q = getActiveQuestion();
             if (!q) return;
 
+            if (q.validateAsync) {
+                showTypingIndicator();
+                const error = await q.validateAsync(value);
+                hideTypingIndicator();
+                if (error) { alert(error); return; }
+            }
+
             if (q.validate) {
                 const error = q.validate(value, bookingState.data);
-                if (error) {
-                    alert(error);
-                    return;
-                }
+                if (error) { alert(error); return; }
             }
 
             if (!skipDataUpdate) {
-                bookingState.data[q.id] = value;
+                if (q.id === 'start_date') {
+                    const parsed = parseDateRangeText(value);
+                    bookingState.data.start_date = parsed.start;
+                    bookingState.data.end_date = parsed.end;
+                } else {
+                    bookingState.data[q.id] = value;
+                }
             }
 
-            const userText = displayValue !== null ? displayValue : value.toString();
-            addMessage('user', userText);
+            const cleanPhoneVal = q.id === 'mumukshu_phone' ? value.replace(/\D/g, '').replace(/^91/, '').slice(-10) : null;
+            if (cleanPhoneVal) bookingState.data.mumukshu_phone = cleanPhoneVal;
 
+            let userText = displayValue !== null ? displayValue : value.toString();
+            if (q.id === 'start_date') {
+                const parsed = parseDateRangeText(value);
+                userText = `${formatDate(parsed.start)} થી ${formatDate(parsed.end)}`;
+            }
+            
+            addMessage('user', userText);
             updateReceiptPreview();
             bookingState.step++;
             showNextQuestion();
@@ -1526,136 +845,16 @@
                 btn.innerHTML = '➤';
                 btn.onclick = () => handleInputSubmit(input.value);
 
-                input.onkeydown = (e) => {
-                    if (e.key === 'Enter') handleInputSubmit(input.value);
-                };
+                input.onkeydown = (e) => { if (e.key === 'Enter') handleInputSubmit(input.value); };
 
                 group.appendChild(input);
                 group.appendChild(btn);
                 inputArea.appendChild(group);
                 setTimeout(() => input.focus(), 100);
             } 
-            else if (q.type === 'date') {
-                const group = document.createElement('div');
-                group.className = 'text-input-group';
-
-                const minVal = typeof q.min === 'function' ? q.min(bookingState.data) : q.min;
-                const maxVal = typeof q.max === 'function' ? q.max(bookingState.data) : q.max;
-
-                const picker = document.createElement('input');
-                picker.type = 'date';
-                picker.className = 'date-picker-native';
-                picker.setAttribute('lang', 'en-GB');
-                picker.tabIndex = -1;
-                picker.setAttribute('aria-hidden', 'true');
-                if (minVal) picker.min = minVal;
-                if (maxVal) picker.max = maxVal;
-
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.inputMode = 'numeric';
-                input.autocomplete = 'off';
-                input.className = 'chat-input';
-                input.id = 'active-chat-input';
-                input.placeholder = 'DD/MM/YYYY';
-                input.maxLength = 10;
-                attachDmyDateTyping(input, picker);
-
-                const submitDate = () => {
-                    let dmy = input.value.trim();
-                    if (dmy.includes('/')) dmy = padDmyDateParts(dmy);
-                    if (!isValidDmyDate(dmy)) {
-                        alert('કૃપા કરીને સાચી તારીખ દાખલ કરો (DD/MM/YYYY).');
-                        return;
-                    }
-                    const iso = dmyToIso(dmy);
-                    if (minVal && iso < minVal) {
-                        alert(`તારીખ ${formatDate(minVal)} પછીની હોવી જોઈએ.`);
-                        return;
-                    }
-                    if (maxVal && iso > maxVal) {
-                        alert(`તારીખ ${formatDate(maxVal)} પહેલાંની હોવી જોઈએ.`);
-                        return;
-                    }
-                    handleInputSubmit(iso, formatDate(iso));
-                };
-
-                const calBtn = document.createElement('button');
-                calBtn.type = 'button';
-                calBtn.className = 'date-cal-btn';
-                calBtn.title = 'કેલેન્ડર';
-                calBtn.textContent = '📅';
-                calBtn.onclick = () => {
-                    if (input.value && isValidDmyDate(input.value)) {
-                        picker.value = dmyToIso(padDmyDateParts(input.value));
-                    }
-                    if (typeof picker.showPicker === 'function') {
-                        try { picker.showPicker(); } catch (_) { picker.click(); }
-                    } else {
-                        picker.click();
-                    }
-                };
-
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'send-btn';
-                btn.innerHTML = '➤';
-                btn.onclick = submitDate;
-
-                input.onkeydown = (e) => {
-                    if (e.key === 'Enter') submitDate();
-                };
-
-                group.append(picker, input, calBtn, btn);
-                inputArea.appendChild(group);
-                setTimeout(() => input.focus({ preventScroll: true }), 100);
-            }
-            else if (q.type === 'counter') {
-                const counterGroup = document.createElement('div');
-                counterGroup.className = 'counter-group';
-
-                let currentVal = q.default || 1;
-
-                const minus = document.createElement('button');
-                minus.className = 'counter-btn';
-                minus.innerText = '−';
-                minus.onclick = () => {
-                    if (currentVal > (q.min || 1)) {
-                        currentVal--;
-                        valSpan.innerText = currentVal;
-                    }
-                };
-
-                const valSpan = document.createElement('span');
-                valSpan.className = 'counter-val';
-                valSpan.innerText = currentVal;
-
-                const plus = document.createElement('button');
-                plus.className = 'counter-btn';
-                plus.innerText = '+';
-                plus.onclick = () => {
-                    if (currentVal < (q.max || 100)) {
-                        currentVal++;
-                        valSpan.innerText = currentVal;
-                    }
-                };
-
-                const submitBtn = document.createElement('button');
-                submitBtn.className = 'chat-pill active';
-                submitBtn.style.marginLeft = '16px';
-                submitBtn.innerText = 'આગળ વધો';
-                submitBtn.onclick = () => handleInputSubmit(currentVal);
-
-                counterGroup.appendChild(minus);
-                counterGroup.appendChild(valSpan);
-                counterGroup.appendChild(plus);
-                counterGroup.appendChild(submitBtn);
-                inputArea.appendChild(counterGroup);
-            }
             else if (q.type === 'pills') {
                 const container = document.createElement('div');
                 container.className = 'pill-container';
-
                 q.options.forEach(opt => {
                     const pill = document.createElement('button');
                     pill.className = 'chat-pill';
@@ -1663,92 +862,48 @@
                     pill.onclick = () => handleInputSubmit(opt.value, opt.label);
                     container.appendChild(pill);
                 });
-
                 inputArea.appendChild(container);
             }
-            else if (q.type === 'shibir-select') {
-                const container = document.createElement('div');
-                container.style.display = 'flex';
-                container.style.flexDirection = 'column';
-                container.style.gap = '10px';
-                container.style.width = '100%';
-
-                const select = document.createElement('select');
-                select.className = 'chat-select';
-                
-                const opts = typeof q.options === 'function' ? q.options() : q.options;
-                opts.forEach(opt => {
-                    const o = document.createElement('option');
-                    o.value = opt.value;
-                    o.innerText = opt.label;
-                    select.appendChild(o);
-                });
-
-                const textInputGroup = document.createElement('div');
-                textInputGroup.className = 'text-input-group hidden';
-                
-                const customInput = document.createElement('input');
-                customInput.type = 'text';
-                customInput.className = 'chat-input';
-                customInput.placeholder = 'શિબિરનું નામ લખો...';
-
-                textInputGroup.appendChild(customInput);
-
-                select.onchange = () => {
-                    if (select.value === 'OTHER') {
-                        textInputGroup.classList.remove('hidden');
-                        setTimeout(() => customInput.focus(), 100);
-                    } else {
-                        textInputGroup.classList.add('hidden');
-                    }
-                };
-
-                const submitBtn = document.createElement('button');
-                submitBtn.className = 'chat-pill active';
-                submitBtn.style.alignSelf = 'flex-end';
-                submitBtn.innerText = 'પસંદ કરો';
-                submitBtn.onclick = () => {
-                    if (select.value === 'OTHER') {
-                        const val = customInput.value.trim();
-                        if (!val) {
-                            alert('કૃપા કરીને શિબિરનું નામ લખો.');
-                            return;
-                        }
-                        handleInputSubmit(val, val);
-                    } else {
-                        const selectedOpt = opts.find(o => o.value === select.value);
-                        handleInputSubmit(select.value, selectedOpt ? selectedOpt.label : (select.value || 'કોઈ શિબિર નથી'));
-                    }
-                };
-
-                container.appendChild(select);
-                container.appendChild(textInputGroup);
-                container.appendChild(submitBtn);
-                inputArea.appendChild(container);
-            }
-            else if (q.type === 'meals-checkbox') {
+            else if (q.type === 'meals-combined') {
                 const container = document.createElement('div');
                 container.className = 'meal-checkbox-group';
+                container.style.gap = '4px';
 
-                const selectedMeals = {
-                    breakfast: false,
-                    lunch: false,
-                    dinner: false
-                };
+                const mealLabel = document.createElement('div');
+                mealLabel.style.fontSize = '0.8rem';
+                mealLabel.style.fontWeight = '600';
+                mealLabel.innerText = "૧. ભોજનની પસંદગી:";
+                container.appendChild(mealLabel);
 
-                q.options.forEach(opt => {
+                const mealsOptions = [
+                    { id: 'all', label: 'બધું જ (નાસ્તો, લંચ, ડિનર)' },
+                    { id: 'breakfast', label: 'સવારનો નાસ્તો (Breakfast)' },
+                    { id: 'lunch', label: 'બપોરનું લંચ (Lunch)' },
+                    { id: 'dinner', label: 'સાંજનું ડિનર (Dinner)' }
+                ];
+
+                const mealStates = { all: true, breakfast: true, lunch: true, dinner: true };
+
+                mealsOptions.forEach(opt => {
                     const label = document.createElement('label');
-                    label.className = 'meal-checkbox-label';
-                    
+                    label.className = 'meal-checkbox-label checked';
+                    label.style.padding = '6px 12px';
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
+                    checkbox.checked = true;
+                    
                     checkbox.onchange = () => {
-                        selectedMeals[opt.id] = checkbox.checked;
-                        if (checkbox.checked) {
-                            label.classList.add('checked');
-                        } else {
-                            label.classList.remove('checked');
+                        mealStates[opt.id] = checkbox.checked;
+                        if (opt.id === 'all') {
+                            container.querySelectorAll('input').forEach((cb, idx) => {
+                                if (idx > 0) {
+                                    cb.checked = checkbox.checked;
+                                    mealStates[mealsOptions[idx].id] = checkbox.checked;
+                                    if (checkbox.checked) cb.parentElement.classList.add('checked'); else cb.parentElement.classList.remove('checked');
+                                }
+                            });
                         }
+                        if (checkbox.checked) label.classList.add('checked'); else label.classList.remove('checked');
                     };
 
                     label.appendChild(checkbox);
@@ -1756,27 +911,59 @@
                     container.appendChild(label);
                 });
 
+                const dietLabel = document.createElement('div');
+                dietLabel.style.fontSize = '0.8rem';
+                dietLabel.style.fontWeight = '600';
+                dietLabel.style.marginTop = '6px';
+                dietLabel.innerText = "૨. મસાલા પસંદગી:";
+                container.appendChild(dietLabel);
+
+                const pillGroup = document.createElement('div');
+                pillGroup.className = 'pill-container';
+                
+                let selectedDiet = 'Regular';
+                const regularPill = document.createElement('button');
+                regularPill.className = 'chat-pill active';
+                regularPill.style.padding = '6px 12px';
+                regularPill.innerText = 'રેગ્યુલર (Regular)';
+                
+                const spicyPill = document.createElement('button');
+                spicyPill.className = 'chat-pill';
+                spicyPill.style.padding = '6px 12px';
+                spicyPill.innerText = 'મોળું (Non-spicy)';
+
+                regularPill.onclick = () => { selectedDiet = 'Regular'; regularPill.classList.add('active'); spicyPill.classList.remove('active'); };
+                spicyPill.onclick = () => { selectedDiet = 'Non-spicy'; spicyPill.classList.add('active'); regularPill.classList.remove('active'); };
+                
+                pillGroup.appendChild(regularPill);
+                pillGroup.appendChild(spicyPill);
+                container.appendChild(pillGroup);
+
                 const submitBtn = document.createElement('button');
                 submitBtn.className = 'chat-pill active';
                 submitBtn.style.alignSelf = 'flex-end';
-                submitBtn.style.marginTop = '6px';
+                submitBtn.style.marginTop = '8px';
                 submitBtn.innerText = 'કન્ફર્મ કરો';
+                
                 submitBtn.onclick = () => {
-                    bookingState.data.has_breakfast = selectedMeals.breakfast;
-                    bookingState.data.has_lunch = selectedMeals.lunch;
-                    bookingState.data.has_dinner = selectedMeals.dinner;
+                    bookingState.data.has_breakfast = mealStates.all ? true : mealStates.breakfast;
+                    bookingState.data.has_lunch = mealStates.all ? true : mealStates.lunch;
+                    bookingState.data.has_dinner = mealStates.all ? true : mealStates.dinner;
+                    bookingState.data.dietary_preference = selectedDiet;
 
                     const mealsList = [];
-                    if (selectedMeals.breakfast) mealsList.push('નાસ્તો');
-                    if (selectedMeals.lunch) mealsList.push('લંચ');
-                    if (selectedMeals.dinner) mealsList.push('ડિનર');
+                    if (bookingState.data.has_breakfast) mealsList.push('નાસ્તો');
+                    if (bookingState.data.has_lunch) mealsList.push('લંચ');
+                    if (bookingState.data.has_dinner) mealsList.push('ડિનર');
 
-                    const displayLabel = mealsList.length > 0 ? mealsList.join(', ') : 'કોઈ ભોજન નહીં';
-                    handleInputSubmit(selectedMeals, displayLabel, true);
+                    const displayLabel = `${mealsList.length > 0 ? mealsList.join(', ') : 'કોઈ ભોજન નહીં'} (${selectedDiet === 'Regular' ? 'રેગ્યુલર' : 'મોળું'})`;
+                    handleInputSubmit(selectedDiet, displayLabel, true);
                 };
 
                 container.appendChild(submitBtn);
                 inputArea.appendChild(container);
+                
+                setTimeout(() => { inputArea.scrollTop = inputArea.scrollHeight; }, 50);
             }
             else if (q.type === 'confirm-buttons') {
                 const container = document.createElement('div');
@@ -1804,23 +991,16 @@
         async function saveChatBooking() {
             const inputArea = document.getElementById('chat-input-area');
             inputArea.innerHTML = '<div style="text-align:center; padding:10px; color:var(--primary); font-weight:600;">⏳ બુકિંગ સાચવવામાં આવી રહ્યું છે...</div>';
-
             try {
                 const response = await fetch('/api/bookings/manual', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(bookingState.data)
                 });
-
-                if (!response.ok) {
-                    const data = await response.json();
-                    throw new Error(data.error || 'સર્વરમાં કોઈ ભૂલ છે');
-                }
-
+                if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'સર્વરમાં કોઈ ભૂલ છે'); }
                 const result = await response.json();
                 if (result.saved) {
                     addMessage('bot', `🎉 **બુકિંગ સફળતાપૂર્વક સાચવવામાં આવ્યું છે!** <br>બુકિંગ આઈડી: **${result.booking_id}**`);
-                    
                     const badge = document.getElementById('receipt-badge');
                     badge.textContent = 'સાચવેલ';
                     badge.className = 'receipt-badge complete';
@@ -1832,16 +1012,12 @@
 
                     inputArea.innerHTML = `
                         <div style="display:flex; flex-direction:column; gap:10px; width:100%; text-align:center;">
-                            <div style="color:var(--success); font-weight:700; font-size:1rem;">✔️ બુકિંગ સેવ થઈ ગયું છે!</div>
                             <button class="chat-pill active" id="new-booking-btn" style="margin: 0 auto; width: fit-content; background-color: var(--success); border-color: var(--success);">નવું બુકિંગ કરો</button>
                         </div>
                     `;
                     document.getElementById('new-booking-btn').onclick = resetChat;
-
                     loadRecentBookings();
-                } else {
-                    throw new Error('બુકિંગ સેવ ન થઈ શક્યું');
-                }
+                } else { throw new Error('બુકિંગ સેવ ન થઈ શક્યું'); }
             } catch (e) {
                 console.error(e);
                 addMessage('bot', `❌ **બુકિંગ સેવ કરવામાં ભૂલ થઈ:** ${e.message}`);
@@ -1856,11 +1032,6 @@
                 mumukshu_phone: '',
                 start_date: '',
                 end_date: '',
-                total_persons: 1,
-                wants_room: false,
-                floor_preference: '',
-                booked_shibir: '',
-                swadhyay_karta: '',
                 has_breakfast: false,
                 has_lunch: false,
                 has_dinner: false,
@@ -1868,18 +1039,10 @@
             };
 
             document.getElementById('chat-messages').innerHTML = '';
-            
             document.getElementById('rec-name').textContent = '-';
             document.getElementById('rec-phone').textContent = '-';
             document.getElementById('rec-start').textContent = '-';
             document.getElementById('rec-end').textContent = '-';
-            document.getElementById('rec-persons').textContent = '1';
-            document.getElementById('rec-room').textContent = 'ના';
-            document.getElementById('rec-floor-row').style.display = 'none';
-            document.getElementById('rec-floor').textContent = '-';
-            document.getElementById('rec-shibir').textContent = '-';
-            document.getElementById('rec-swadhyay-row').style.display = 'none';
-            document.getElementById('rec-swadhyay').textContent = '-';
             document.getElementById('rec-meals').textContent = '-';
             document.getElementById('rec-diet').textContent = 'Regular';
 
@@ -1900,31 +1063,6 @@
             document.getElementById('rec-phone').textContent = data.mumukshu_phone || '-';
             document.getElementById('rec-start').textContent = formatDate(data.start_date);
             document.getElementById('rec-end').textContent = formatDate(data.end_date);
-            document.getElementById('rec-persons').textContent = data.total_persons;
-            document.getElementById('rec-room').textContent = data.wants_room ? 'હા' : 'ના';
-            
-            if (data.wants_room) {
-                document.getElementById('rec-floor-row').style.display = 'flex';
-                const floorMap = {
-                    'Ground Floor': 'ગ્રાઉન્ડ ફ્લોર',
-                    'First Floor': 'પહેલો માળ',
-                    'Any Floor': 'કોઈપણ માળ'
-                };
-                document.getElementById('rec-floor').textContent = floorMap[data.floor_preference] || data.floor_preference || '-';
-            } else {
-                document.getElementById('rec-floor-row').style.display = 'none';
-            }
-
-            document.getElementById('rec-shibir').textContent = data.booked_shibir || 'કોઈ નહીં';
-
-            // Show or hide swadhyay karta in receipt
-            const isNewShibir = data.booked_shibir && data.booked_shibir !== '' && !availableShibirs.some(s => s.shibir_name === data.booked_shibir);
-            if (isNewShibir) {
-                document.getElementById('rec-swadhyay-row').style.display = 'flex';
-                document.getElementById('rec-swadhyay').textContent = data.swadhyay_karta || '-';
-            } else {
-                document.getElementById('rec-swadhyay-row').style.display = 'none';
-            }
 
             const mealList = [];
             if (data.has_breakfast) mealList.push('નાસ્તો');
@@ -1932,23 +1070,13 @@
             if (data.has_dinner) mealList.push('ડિનર');
             document.getElementById('rec-meals').textContent = mealList.length > 0 ? mealList.join(', ') : 'કોઈ ભોજન નહીં';
 
-            const dietMap = {
-                'Regular': 'રેગ્યુલર',
-                'Jain': 'જૈન',
-                'Swaminarayan': 'સ્વામિનારાયણ',
-                'Other': 'અન્ય'
-            };
+            const dietMap = { 'Regular': 'રેગ્યુલર', 'Non-spicy': 'મોળું' };
             document.getElementById('rec-diet').textContent = dietMap[data.dietary_preference] || data.dietary_preference || 'Regular';
         }
 
         function escapeHtml(str) {
             if (!str) return '';
-            return str.toString()
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
+            return str.toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
         }
 
         function formatDate(dateStr) {
@@ -1958,14 +1086,10 @@
             return date.toLocaleDateString('gu-IN', { day: 'numeric', month: 'short', year: 'numeric' });
         }
 
-        // DOM Initial Setup
         window.addEventListener('DOMContentLoaded', () => {
             checkDbHealth();
             loadRecentBookings();
-            loadShibirs().then(() => {
-                resetChat();
-            });
-
+            resetChat();
             document.getElementById('refresh-bookings-btn').onclick = loadRecentBookings;
             document.getElementById('reset-chat-btn').onclick = resetChat;
         });
