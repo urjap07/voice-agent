@@ -1,0 +1,28 @@
+{
+  "name": "voice-agent",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "setup:retell": "node scripts/setup-retell-booking-fields.js",
+    "setup": "node scripts/setup-retell-booking-fields.js && node scripts/fix-greeting.js",
+    "fix:greeting": "node scripts/fix-greeting.js",
+    "fix:greeting-flow": "node scripts/fix-greeting-flow.js",
+    "fix:slow-speech": "node scripts/fix-slow-speech.js",
+    "fix:skip-unanswered": "node scripts/fix-skip-unanswered.js",
+    "fix:require-answer": "node scripts/fix-require-answer.js",
+    "fix:audio-balance": "node scripts/fix-audio-balance.js",
+    "fix:speech-input": "node scripts/fix-speech-input.js",
+    "fix:stability": "node scripts/fix-call-stability.js",
+    "fix:interruption": "node scripts/fix-interruption.js"
+  },
+  "dependencies": {
+    "axios": "^1.16.1",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "mysql2": "^3.14.1",
+    "retell-client-js-sdk": "^2.0.7",
+    "retell-sdk": "^4.39.0"
+  }
+}

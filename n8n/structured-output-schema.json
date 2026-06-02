@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "properties": {
+    "mumukshu_name": { "type": "string", "description": "Guest full name" },
+    "mumukshu_phone": { "type": "string", "description": "Phone number" },
+    "start_date": { "type": "string", "description": "YYYY-MM-DD check-in" },
+    "end_date": { "type": "string", "description": "YYYY-MM-DD check-out" },
+    "total_persons": { "type": "integer", "description": "Number of guests" },
+    "wants_room": { "type": "boolean", "description": "Room requested" },
+    "floor_preference": { "type": "string", "description": "Floor preference if room" },
+    "booked_shibir": { "type": "string", "description": "Shibir/camp name if any" },
+    "has_breakfast": { "type": "boolean" },
+    "has_lunch": { "type": "boolean" },
+    "has_dinner": { "type": "boolean" },
+    "dietary_preference": { "type": "string", "description": "Regular, Jain, etc." }
+  },
+  "required": ["mumukshu_name", "mumukshu_phone", "start_date", "end_date"]
+}
