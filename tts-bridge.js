@@ -16,7 +16,7 @@ app.post('/sarvam-tts', async (req, res) => {
         inputs: [text],
         target_language_code: 'gu-IN',
         speaker: 'anushka',
-        model: 'bulbul:v3-beta',
+        model: 'bulbul:v2',
         pace: 1.0,
         enable_preprocessing: true,
       },

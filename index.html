@@ -501,7 +501,7 @@
             formData.append('data', blob, 'voice_booking.webm');
 
             try {
-                // Post directly to your local n8n Webhook URL
+                // Post directly to your local n8n Webhook proxy endpoint
                 const response = await fetch('/api/voice-booking', {
                     method: 'POST',
                     body: formData
@@ -509,7 +509,19 @@
 
                 if (!response.ok) throw new Error(`Server returned status: ${response.status}`);
 
-                const result = await response.json();
+                // 1. Catch raw binary array buffer returned from backend proxy
+                const arrayBuffer = await response.arrayBuffer();
+
+                // 2. Set up native Web Audio Context decode logic
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+                // 3. Mount source nodes to device speakers and stream instantly
+                const source = audioContext.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(audioContext.destination);
+                source.start(0);
+
                 setSaveStatus('બુકિંગ સેવ થઈ ગઈ!', 'ok');
                 loadRecentBookings(); 
                 
@@ -576,7 +588,7 @@
                 placeholder: 'તમારો ૧૦-અંકનો ફોન નંબર...',
                 validateAsync: async (val) => {
                     const clean = val.replace(/\D/g, '').replace(/^91/, '').slice(-10);
-                    if (clean.length < 10) return 'કૃપા કરીને ૧૦ અંકનો સાચો ફોન નંબર લખો.';
+                    if (clean.length < 10) return 'કૃપા કરીને ૧ો અંકનો સાચો ફોન નંબર લખો.';
                     
                     try {
                         const response = await fetch('/verify-phone', {
@@ -622,7 +634,7 @@
             },
             {
                 id: 'combined_food',
-                text: "સરસ! હવે ભોજન વ્યવstwa જણાવો: આપને કયા ભોજન જોઈશે? (Breakfast, Lunch, Dinner બધું જ રાખવું છે?) તેમજ તમારી ભોજન પસંદગી 'Regular' જોઈશે કે 'Non-spicy'?",
+                text: "સરસ! હવે ભોજન વ્યવસ્થા જણાવો: આપને કયા ભોજન જોઈશે? (Breakfast, Lunch, Dinner બધું જ રાખવું છે?) તેમજ તમારી ભોજન પસંદગી 'Regular' જોઈશે કે 'Non-spicy'?",
                 type: 'meals-combined'
             },
             {
