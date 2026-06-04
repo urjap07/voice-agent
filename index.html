@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="gu">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>બુકિંગ આસિસ્ટન્ટ | Booking Assistant</title>
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+Bhai+2:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Baloo+Bhai+2:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <style>
         :root {
             --primary: #4f46e5;
@@ -70,7 +73,7 @@
             font-weight: 700;
             background: linear-gradient(to right, #312e81, #4f46e5);
             -webkit-background-clip: text;
-            background-clip: text; 
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -81,7 +84,7 @@
             background: white;
             padding: 8px 16px;
             border-radius: 50px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
             font-size: 0.85rem;
             font-weight: 500;
         }
@@ -193,7 +196,9 @@
             width: 100%;
         }
 
-        .sound-wave-container.active { display: flex; }
+        .sound-wave-container.active {
+            display: flex;
+        }
 
         .sound-wave-container .bar {
             width: 4px;
@@ -202,13 +207,32 @@
             border-radius: 2px;
             animation: soundWave 1.2s ease-in-out infinite;
         }
-        .sound-wave-container .bar:nth-child(2) { animation-delay: 0.15s; height: 18px; }
-        .sound-wave-container .bar:nth-child(3) { animation-delay: 0.3s; height: 28px; }
-        .sound-wave-container .bar:nth-child(4) { animation-delay: 0.45s; height: 22px; }
+
+        .sound-wave-container .bar:nth-child(2) {
+            animation-delay: 0.15s;
+            height: 18px;
+        }
+
+        .sound-wave-container .bar:nth-child(3) {
+            animation-delay: 0.3s;
+            height: 28px;
+        }
+
+        .sound-wave-container .bar:nth-child(4) {
+            animation-delay: 0.45s;
+            height: 22px;
+        }
 
         @keyframes soundWave {
-            0%, 100% { transform: scaleY(1); }
-            50% { transform: scaleY(2.2); }
+
+            0%,
+            100% {
+                transform: scaleY(1);
+            }
+
+            50% {
+                transform: scaleY(2.2);
+            }
         }
 
         #save-status {
@@ -217,10 +241,19 @@
             margin-top: 10px;
             padding: 8px;
             border-radius: 8px;
-            background-color: rgba(0,0,0,0.02);
+            background-color: rgba(0, 0, 0, 0.02);
         }
-        #save-status.ok { color: #10b981; background-color: var(--success-light); font-weight: 600; }
-        #save-status.err { color: #ef4444; background-color: rgba(239, 68, 68, 0.08); }
+
+        #save-status.ok {
+            color: #10b981;
+            background-color: var(--success-light);
+            font-weight: 600;
+        }
+
+        #save-status.err {
+            color: #ef4444;
+            background-color: rgba(239, 68, 68, 0.08);
+        }
 
         .refresh-btn {
             background: none;
@@ -250,19 +283,90 @@
             font-size: 0.85rem;
         }
 
-        .booking-item-info h5 { font-size: 0.9rem; color: #1e1b4b; }
-        .booking-item-info p { color: var(--text-muted); font-size: 0.8rem; }
-        .booking-item-badge { background-color: var(--success-light); color: var(--success-hover); padding: 4px 8px; border-radius: 50px; font-weight: 600; font-size: 0.7rem; }
+        .booking-item-info h5 {
+            font-size: 0.9rem;
+            color: #1e1b4b;
+        }
 
-        .right-column { display: flex; flex-direction: column; gap: 24px; }
-        .chat-card { height: 460px; display: flex; flex-direction: column; padding: 0; overflow: hidden; }
-        .chat-header { padding: 14px 20px; background: white; border-bottom: 1.5px solid var(--border-color); }
-        .chat-agent-info { display: flex; align-items: center; gap: 12px; }
-        .agent-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--primary-light); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
-        .chat-agent-info h4 { font-size: 0.95rem; color: #1e1b4b; }
-        .agent-status { font-size: 0.75rem; color: var(--success); display: flex; align-items: center; gap: 4px; }
-        .agent-status::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background-color: var(--success); }
-        .reset-chat-btn { background: none; border: none; font-size: 1rem; cursor: pointer; padding: 6px; }
+        .booking-item-info p {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .booking-item-badge {
+            background-color: var(--success-light);
+            color: var(--success-hover);
+            padding: 4px 8px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.7rem;
+        }
+
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .chat-card {
+            height: 460px;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 14px 20px;
+            background: white;
+            border-bottom: 1.5px solid var(--border-color);
+        }
+
+        .chat-agent-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .agent-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .chat-agent-info h4 {
+            font-size: 0.95rem;
+            color: #1e1b4b;
+        }
+
+        .agent-status {
+            font-size: 0.75rem;
+            color: var(--success);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .agent-status::before {
+            content: '';
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background-color: var(--success);
+        }
+
+        .reset-chat-btn {
+            background: none;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 6px;
+        }
 
         .chat-messages {
             flex: 1;
@@ -274,58 +378,268 @@
             background: #fafbfc;
         }
 
-        .msg { max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 0.9rem; line-height: 1.4; }
-        .msg.bot { align-self: flex-start; background-color: white; border: 1px solid var(--border-color); border-top-left-radius: 4px; color: var(--text-dark); }
-        .msg.user { align-self: flex-end; background-color: var(--primary); color: white; border-top-right-radius: 4px; }
+        .msg {
+            max-width: 85%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
 
-        .typing-indicator { display: flex; gap: 4px; padding: 10px 14px; background-color: white; border: 1px solid var(--border-color); border-radius: 14px; align-self: flex-start; }
-        .typing-indicator span { width: 7px; height: 7px; background-color: #94a3b8; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
-        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
-        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        .msg.bot {
+            align-self: flex-start;
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-top-left-radius: 4px;
+            color: var(--text-dark);
+        }
 
-        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+        .msg.user {
+            align-self: flex-end;
+            background-color: var(--primary);
+            color: white;
+            border-top-right-radius: 4px;
+        }
 
-        .chat-input-area { 
-            padding: 14px 20px; 
-            background: white; 
-            border-top: 1.5px solid var(--border-color); 
-            display: flex; 
-            flex-direction: column; 
-            gap: 10px; 
-            max-height: 200px; 
-            overflow-y: auto; 
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 10px 14px;
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            align-self: flex-start;
+        }
+
+        .typing-indicator span {
+            width: 7px;
+            height: 7px;
+            background-color: #94a3b8;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .typing-indicator span:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            80%,
+            100% {
+                transform: scale(0);
+            }
+
+            40% {
+                transform: scale(1);
+            }
+        }
+
+        .chat-input-area {
+            padding: 14px 20px;
+            background: white;
+            border-top: 1.5px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 200px;
+            overflow-y: auto;
             flex-shrink: 0;
         }
-        .text-input-group { display: flex; width: 100%; gap: 8px; }
-        .chat-input { flex: 1; padding: 10px 14px; border: 1.5px solid var(--border-color); border-radius: 10px; font-size: 0.9rem; outline: none; }
-        .send-btn { background-color: var(--primary); color: white; border: none; border-radius: 10px; width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
-        .pill-container { display: flex; flex-wrap: wrap; gap: 8px; }
-        .chat-pill { background-color: var(--bg-light); border: 1px solid var(--border-color); padding: 8px 14px; border-radius: 50px; font-size: 0.85rem; cursor: pointer; font-weight: 500; color: var(--text-dark); }
-        .chat-pill.active { background-color: var(--primary); color: white; border-color: var(--primary); }
+        .text-input-group {
+            display: flex;
+            width: 100%;
+            gap: 8px;
+        }
 
-        .meal-checkbox-group { display: flex; flex-direction: column; gap: 6px; width: 100%; }
-        .meal-checkbox-label { display: flex; align-items: center; gap: 10px; background-color: var(--bg-light); border: 1.5px solid var(--border-color); padding: 10px 14px; border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 500; }
-        .meal-checkbox-label.checked { border-color: var(--primary); background-color: var(--primary-light); color: var(--primary); }
-        .meal-checkbox-label input { display: none; }
+        .chat-input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            outline: none;
+        }
 
-        .receipt-card { background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%); border: 1.5px dashed #cbd5e1; }
-        .receipt-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #cbd5e1; padding-bottom: 10px; }
-        .receipt-badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 50px; font-weight: 600; background-color: #e2e8f0; color: #64748b; }
-        .receipt-badge.complete { background-color: var(--success-light); color: var(--success-hover); }
-        .receipt-body { display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; }
-        .receipt-item { display: flex; justify-content: space-between; }
-        .receipt-item .label { color: var(--text-muted); }
-        .receipt-item .val { font-weight: 600; color: #1e1b4b; }
-        .receipt-dashed { border-top: 1px dashed #cbd5e1; margin: 6px 0; width: 100%; }
-        .receipt-status-text { text-align: center; font-size: 0.75rem; color: var(--text-muted); font-style: italic; }
+        .send-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-        .bottom-phone-container { position: fixed; bottom: 25px; right: 25px; z-index: 100; }
-        .bottom-phone-btn { width: 44px; height: 44px; border-radius: 50%; background-color: var(--success); color: white; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .pill-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .chat-pill {
+            background-color: var(--bg-light);
+            border: 1px solid var(--border-color);
+            padding: 8px 14px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+
+        .chat-pill.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .meal-checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            width: 100%;
+        }
+
+        .meal-checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: var(--bg-light);
+            border: 1.5px solid var(--border-color);
+            padding: 10px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .meal-checkbox-label.checked {
+            border-color: var(--primary);
+            background-color: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .meal-checkbox-label input {
+            display: none;
+        }
+
+        .receipt-card {
+            background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+            border: 1.5px dashed #cbd5e1;
+        }
+
+        .receipt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px dashed #cbd5e1;
+            padding-bottom: 10px;
+        }
+
+        .receipt-badge {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 50px;
+            font-weight: 600;
+            background-color: #e2e8f0;
+            color: #64748b;
+        }
+
+        .receipt-badge.complete {
+            background-color: var(--success-light);
+            color: var(--success-hover);
+        }
+
+        .receipt-body {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 0.85rem;
+        }
+
+        .receipt-item {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .receipt-item .label {
+            color: var(--text-muted);
+        }
+
+        .receipt-item .val {
+            font-weight: 600;
+            color: #1e1b4b;
+        }
+
+        .receipt-dashed {
+            border-top: 1px dashed #cbd5e1;
+            margin: 6px 0;
+            width: 100%;
+        }
+
+        .receipt-status-text {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .bottom-phone-container {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            z-index: 100;
+        }
+
+        .bottom-phone-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background-color: var(--success);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-4px);
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
     </style>
 </head>
+
 <body>
 
     <div class="app-container">
@@ -347,13 +661,13 @@
                         <h3>🎙️ વોઇસ આસિસ્ટન્ટ (મોખિક બુકિંગ)</h3>
                     </div>
                     <p class="subtitle">એજન્ટ સાથે ગુજરાતીમાં વાત કરવા માટે નીચેનું બટન દબાવો.</p>
-                    
+
                     <div class="voice-controls">
                         <button id="vapi-btn" class="talk-btn">
                             <span class="btn-icon">📞</span>
                             <span class="btn-text">વાત કરો</span>
                         </button>
-                        
+
                         <div class="sound-wave-container" id="sound-wave">
                             <div class="bar"></div>
                             <div class="bar"></div>
@@ -388,7 +702,7 @@
                             <button class="reset-chat-btn" id="reset-chat-btn" title="ફરીથી શરૂ કરો">🗑️ રીસેટ</button>
                         </div>
                     </div>
-                    
+
                     <div class="chat-messages" id="chat-messages"></div>
                     <div class="chat-input-area" id="chat-input-area"></div>
                 </div>
@@ -399,12 +713,18 @@
                         <span class="receipt-badge" id="receipt-badge">અપૂર્ણ</span>
                     </div>
                     <div class="receipt-body">
-                        <div class="receipt-item"><span class="label">નામ:</span> <span class="val" id="rec-name">-</span></div>
-                        <div class="receipt-item"><span class="label">ફોન નંબર:</span> <span class="val" id="rec-phone">-</span></div>
-                        <div class="receipt-item"><span class="label">ચેક-ઇન તારીખ:</span> <span class="val" id="rec-start">-</span></div>
-                        <div class="receipt-item"><span class="label">ચેક-આઉટ તારીખ:</span> <span class="val" id="rec-end">-</span></div>
-                        <div class="receipt-item"><span class="label">ભોજન વ્યવસ્થા:</span> <span class="val" id="rec-meals">-</span></div>
-                        <div class="receipt-item"><span class="label">ભોજન પસંદગી:</span> <span class="val" id="rec-diet">-</span></div>
+                        <div class="receipt-item"><span class="label">નામ:</span> <span class="val"
+                                id="rec-name">-</span></div>
+                        <div class="receipt-item"><span class="label">ફોન નંબર:</span> <span class="val"
+                                id="rec-phone">-</span></div>
+                        <div class="receipt-item"><span class="label">ચેક-ઇન તારીખ:</span> <span class="val"
+                                id="rec-start">-</span></div>
+                        <div class="receipt-item"><span class="label">ચેક-આઉટ તારીખ:</span> <span class="val"
+                                id="rec-end">-</span></div>
+                        <div class="receipt-item"><span class="label">ભોજન વ્યવસ્થા:</span> <span class="val"
+                                id="rec-meals">-</span></div>
+                        <div class="receipt-item"><span class="label">ભોજન પસંદગી:</span> <span class="val"
+                                id="rec-diet">-</span></div>
                     </div>
                     <div class="receipt-footer">
                         <div class="receipt-dashed"></div>
@@ -446,16 +766,16 @@
 
                     activeAudioContext = new (window.AudioContext || window.webkitAudioContext)();
                     const audioBuffer = await activeAudioContext.decodeAudioData(arrayBuffer);
-                    
+
                     activeAudioSource = activeAudioContext.createBufferSource();
                     activeAudioSource.buffer = audioBuffer;
                     activeAudioSource.connect(activeAudioContext.destination);
-                    
+
                     activeAudioSource.onended = () => {
                         stopActivePlayback();
                         resolve();
                     };
-                    
+
                     activeAudioSource.start(0);
                 } catch (e) {
                     reject(e);
@@ -467,13 +787,13 @@
             if (activeAudioSource) {
                 try {
                     activeAudioSource.stop();
-                } catch (e) {}
+                } catch (e) { }
                 activeAudioSource = null;
             }
             if (activeAudioContext && activeAudioContext.state !== 'closed') {
                 try {
                     activeAudioContext.close();
-                } catch (e) {}
+                } catch (e) { }
                 activeAudioContext = null;
             }
         }
@@ -486,25 +806,25 @@
                 try {
                     setLoadingUIState();
                     setSaveStatus('કનેક્ટ થઈ રહ્યું છે...');
-                    
+
                     // Generate new session ID
                     currentSessionId = 'voice_' + Date.now();
                     const welcomeUrl = `/api/voice-welcome?sessionId=${currentSessionId}`;
-                    
+
                     const response = await fetch(welcomeUrl);
                     if (!response.ok) throw new Error(`Welcome API failed with status ${response.status}`);
-                    
+
                     const arrayBuffer = await response.arrayBuffer();
-                    
+
                     // Show speaking UI
                     updateVoiceButton('🔊', 'એજન્ટ બોલે છે...');
                     soundWave.classList.add('active');
                     widgetBtn.innerText = '🔊';
                     mainBtn.disabled = true;
                     widgetBtn.disabled = true;
-                    
+
                     await playAudioBuffer(arrayBuffer);
-                    
+
                     setSaveStatus('એજન્ટ સાંભળી રહ્યો છે. બોલવા માટે ઉપરનું બટન દબાવો.', 'ok');
                 } catch (err) {
                     console.error('Welcome message fetch failed:', err);
@@ -524,18 +844,18 @@
                     audioChunks = [];
 
                     // 1. Request microphone access natively from browser
-                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                    const stream = await navigator.mediaDevices.getUserMedia({
                         audio: {
                             autoGainControl: true,
                             echoCancellation: true,
                             noiseSuppression: true,
                             channelCount: 1
-                        } 
+                        }
                     });
 
                     // 2. Initialize MediaRecorder with standard webm audio container mapping
                     mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-                    
+
                     mediaRecorder.ondataavailable = (event) => {
                         if (event.data.size > 0) audioChunks.push(event.data);
                     };
@@ -544,13 +864,13 @@
                         // Compile the chunks into a unified audio blob configuration
                         const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                         stream.getTracks().forEach(track => track.stop()); // Release mic handle
-                        
+
                         await sendAudioToSarvamPipeline(audioBlob);
                     };
 
                     mediaRecorder.start();
                     isRecording = true;
-                    
+
                     // 3. Update UI states
                     updateVoiceButton('🛑', 'બંધ કરો', true);
                     widgetBtn.innerText = '🛑';
@@ -598,12 +918,12 @@
                 soundWave.classList.add('active');
                 widgetBtn.innerText = '🔊';
                 setSaveStatus('એજન્ટ જવાબ આપી રહ્યો છે...');
-                
+
                 await playAudioBuffer(arrayBuffer);
 
                 setSaveStatus('એજન્ટ સાંભળી રહ્યો છે. ફરી બોલવા માટે બટન દબાવો.', 'ok');
-                loadRecentBookings(); 
-                
+                loadRecentBookings();
+
             } catch (err) {
                 console.error('Pipeline execution failed:', err);
                 setSaveStatus(`ભૂલ: ${err.message}`, 'err');
@@ -673,7 +993,7 @@
                 validateAsync: async (val) => {
                     const clean = val.replace(/\D/g, '').replace(/^91/, '').slice(-10);
                     if (clean.length < 10) return 'કૃપા કરીને ૧ો અંકનો સાચો ફોન નંબર લખો.';
-                    
+
                     try {
                         const response = await fetch('/verify-phone', {
                             method: 'POST',
@@ -701,18 +1021,18 @@
                 validate: (val) => {
                     const parsed = parseDateRangeText(val);
                     if (!parsed) return "તારીખો સમજી શકાઈ નથી. કૃપા કરીને '01 - 06 June' અથવા '03 June' જેવી રીતે લખો.";
-                    
+
                     const start = new Date(parsed.start);
                     const end = new Date(parsed.end);
                     const today = new Date();
-                    today.setHours(0,0,0,0);
-                    
+                    today.setHours(0, 0, 0, 0);
+
                     if (start < today) return 'ચેક-ઇન તારીખ આજની અથવા પછીની હોવી જોઈએ.';
                     if (end <= start) return 'ચેક-આઉટ તારીખ ચેક-ઇન પછીની હોવી જોઈએ.';
-                    
+
                     const diffDays = (end - start) / (1000 * 60 * 60 * 24);
                     if (diffDays > 9) return 'તમે વધુમાં વધુ ૯ દિવસ માટે જ બુકિંગ કરાવી શકો છો.';
-                    
+
                     return null;
                 }
             },
@@ -734,15 +1054,15 @@
 
             const rangeRegex = /(\d{1,2})\s*(?:-|to)\s*(\d{1,2})\s*([a-zA-Z]+)/i;
             const rangeMatch = cleanInput.match(rangeRegex);
-            
+
             if (rangeMatch) {
                 const startDay = parseInt(rangeMatch[1], 10);
                 const endDay = parseInt(rangeMatch[2], 10);
                 const monthName = rangeMatch[3];
-                
+
                 const startDateObj = new Date(`${startDay} ${monthName} ${currentYear}`);
                 const endDateObj = new Date(`${endDay} ${monthName} ${currentYear}`);
-                
+
                 if (!isNaN(startDateObj.getTime()) && !isNaN(endDateObj.getTime())) {
                     return {
                         start: startDateObj.toISOString().split('T')[0],
@@ -753,11 +1073,11 @@
 
             const singleRegex = /(\d{1,2})\s*([a-zA-Z]+)/i;
             const singleMatch = cleanInput.match(singleRegex);
-            
+
             if (singleMatch) {
                 const startDay = parseInt(singleMatch[1], 10);
                 const monthName = singleMatch[2];
-                
+
                 const startDateObj = new Date(`${startDay} ${monthName} ${currentYear}`);
                 if (!isNaN(startDateObj.getTime())) {
                     const endDateObj = new Date(startDateObj);
@@ -912,7 +1232,7 @@
                 const parsed = parseDateRangeText(value);
                 userText = `${formatDate(parsed.start)} થી ${formatDate(parsed.end)}`;
             }
-            
+
             addMessage('user', userText);
             updateReceiptPreview();
             bookingState.step++;
@@ -929,13 +1249,13 @@
             if (q.type === 'text' || q.type === 'tel') {
                 const group = document.createElement('div');
                 group.className = 'text-input-group';
-                
+
                 const input = document.createElement('input');
                 input.type = q.type;
                 input.className = 'chat-input';
                 input.placeholder = q.placeholder || '';
                 input.id = 'active-chat-input';
-                
+
                 const btn = document.createElement('button');
                 btn.className = 'send-btn';
                 btn.innerHTML = '➤';
@@ -947,7 +1267,7 @@
                 group.appendChild(btn);
                 inputArea.appendChild(group);
                 setTimeout(() => input.focus(), 100);
-            } 
+            }
             else if (q.type === 'pills') {
                 const container = document.createElement('div');
                 container.className = 'pill-container';
@@ -987,7 +1307,7 @@
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.checked = true;
-                    
+
                     checkbox.onchange = () => {
                         mealStates[opt.id] = checkbox.checked;
                         if (opt.id === 'all') {
@@ -1016,13 +1336,13 @@
 
                 const pillGroup = document.createElement('div');
                 pillGroup.className = 'pill-container';
-                
+
                 let selectedDiet = 'Regular';
                 const regularPill = document.createElement('button');
                 regularPill.className = 'chat-pill active';
                 regularPill.style.padding = '6px 12px';
                 regularPill.innerText = 'રેગ્યુલર (Regular)';
-                
+
                 const spicyPill = document.createElement('button');
                 spicyPill.className = 'chat-pill';
                 spicyPill.style.padding = '6px 12px';
@@ -1030,7 +1350,7 @@
 
                 regularPill.onclick = () => { selectedDiet = 'Regular'; regularPill.classList.add('active'); spicyPill.classList.remove('active'); };
                 spicyPill.onclick = () => { selectedDiet = 'Non-spicy'; spicyPill.classList.add('active'); regularPill.classList.remove('active'); };
-                
+
                 pillGroup.appendChild(regularPill);
                 pillGroup.appendChild(spicyPill);
                 container.appendChild(pillGroup);
@@ -1040,7 +1360,7 @@
                 submitBtn.style.alignSelf = 'flex-end';
                 submitBtn.style.marginTop = '8px';
                 submitBtn.innerText = 'કન્ફર્મ કરો';
-                
+
                 submitBtn.onclick = () => {
                     bookingState.data.has_breakfast = mealStates.all ? true : mealStates.breakfast;
                     bookingState.data.has_lunch = mealStates.all ? true : mealStates.lunch;
@@ -1058,7 +1378,7 @@
 
                 container.appendChild(submitBtn);
                 inputArea.appendChild(container);
-                
+
                 setTimeout(() => { inputArea.scrollTop = inputArea.scrollHeight; }, 50);
             }
             else if (q.type === 'confirm-buttons') {
@@ -1195,4 +1515,5 @@
         });
     </script>
 </body>
+
 </html>
