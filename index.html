@@ -426,6 +426,9 @@
         let mediaRecorder;
         let audioChunks = [];
         let isRecording = false;
+        let currentSessionId = null;
+        let activeAudioSource = null;
+        let activeAudioContext = null;
 
         const mainBtn = document.getElementById('vapi-btn');
         const widgetBtn = document.getElementById('bottom-phone-widget');
@@ -435,7 +438,85 @@
         mainBtn.addEventListener('click', toggleRecordingFlow);
         widgetBtn.addEventListener('click', toggleRecordingFlow);
 
+        async function playAudioBuffer(arrayBuffer) {
+            return new Promise(async (resolve, reject) => {
+                try {
+                    // Stop any playing audio before starting new playback
+                    stopActivePlayback();
+
+                    activeAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const audioBuffer = await activeAudioContext.decodeAudioData(arrayBuffer);
+                    
+                    activeAudioSource = activeAudioContext.createBufferSource();
+                    activeAudioSource.buffer = audioBuffer;
+                    activeAudioSource.connect(activeAudioContext.destination);
+                    
+                    activeAudioSource.onended = () => {
+                        stopActivePlayback();
+                        resolve();
+                    };
+                    
+                    activeAudioSource.start(0);
+                } catch (e) {
+                    reject(e);
+                }
+            });
+        }
+
+        function stopActivePlayback() {
+            if (activeAudioSource) {
+                try {
+                    activeAudioSource.stop();
+                } catch (e) {}
+                activeAudioSource = null;
+            }
+            if (activeAudioContext && activeAudioContext.state !== 'closed') {
+                try {
+                    activeAudioContext.close();
+                } catch (e) {}
+                activeAudioContext = null;
+            }
+        }
+
         async function toggleRecordingFlow() {
+            // Stop any playing audio response
+            stopActivePlayback();
+
+            if (!currentSessionId) {
+                try {
+                    setLoadingUIState();
+                    setSaveStatus('કનેક્ટ થઈ રહ્યું છે...');
+                    
+                    // Generate new session ID
+                    currentSessionId = 'voice_' + Date.now();
+                    const welcomeUrl = `/api/voice-welcome?sessionId=${currentSessionId}`;
+                    
+                    const response = await fetch(welcomeUrl);
+                    if (!response.ok) throw new Error(`Welcome API failed with status ${response.status}`);
+                    
+                    const arrayBuffer = await response.arrayBuffer();
+                    
+                    // Show speaking UI
+                    updateVoiceButton('🔊', 'એજન્ટ બોલે છે...');
+                    soundWave.classList.add('active');
+                    widgetBtn.innerText = '🔊';
+                    mainBtn.disabled = true;
+                    widgetBtn.disabled = true;
+                    
+                    await playAudioBuffer(arrayBuffer);
+                    
+                    setSaveStatus('એજન્ટ સાંભળી રહ્યો છે. બોલવા માટે ઉપરનું બટન દબાવો.', 'ok');
+                } catch (err) {
+                    console.error('Welcome message fetch failed:', err);
+                    setSaveStatus(`કનેક્શન નિષ્ફળ થયું: ${err.message}`, 'err');
+                    currentSessionId = null;
+                } finally {
+                    resetButtonUIState();
+                    soundWave.classList.remove('active');
+                }
+                return;
+            }
+
             if (!isRecording) {
                 try {
                     setLoadingUIState();
@@ -492,7 +573,7 @@
 
         async function sendAudioToSarvamPipeline(blob) {
             setSaveStatus('બુકિંગ સેવ થાય છે...');
-            updateVoiceButton('⏳', 'બુકિંગ સેવ થાય છે...');
+            updateVoiceButton('⏳', 'પ્રોસેસિંગ...');
             mainBtn.disabled = true;
             widgetBtn.disabled = true;
 
@@ -502,7 +583,7 @@
 
             try {
                 // Post directly to your local n8n Webhook proxy endpoint
-                const response = await fetch('/api/voice-booking', {
+                const response = await fetch(`/api/voice-booking?sessionId=${currentSessionId}`, {
                     method: 'POST',
                     body: formData
                 });
@@ -512,17 +593,15 @@
                 // 1. Catch raw binary array buffer returned from backend proxy
                 const arrayBuffer = await response.arrayBuffer();
 
-                // 2. Set up native Web Audio Context decode logic
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                // 2. Show agent speaking UI
+                updateVoiceButton('🔊', 'એજન્ટ બોલે છે...');
+                soundWave.classList.add('active');
+                widgetBtn.innerText = '🔊';
+                setSaveStatus('એજન્ટ જવાબ આપી રહ્યો છે...');
+                
+                await playAudioBuffer(arrayBuffer);
 
-                // 3. Mount source nodes to device speakers and stream instantly
-                const source = audioContext.createBufferSource();
-                source.buffer = audioBuffer;
-                source.connect(audioContext.destination);
-                source.start(0);
-
-                setSaveStatus('બુકિંગ સેવ થઈ ગઈ!', 'ok');
+                setSaveStatus('એજન્ટ સાંભળી રહ્યો છે. ફરી બોલવા માટે બટન દબાવો.', 'ok');
                 loadRecentBookings(); 
                 
             } catch (err) {
@@ -556,9 +635,14 @@
 
         function resetButtonUIState() {
             isRecording = false;
-            updateVoiceButton('📞', 'વાત કરો');
+            if (currentSessionId) {
+                updateVoiceButton('🎤', 'વાત કરો (બોલો)');
+                widgetBtn.innerText = '🎤';
+            } else {
+                updateVoiceButton('📞', 'વાત કરો');
+                widgetBtn.innerText = '📞';
+            }
             mainBtn.disabled = false;
-            widgetBtn.innerText = '📞';
             widgetBtn.className = 'bottom-phone-btn';
             widgetBtn.disabled = false;
         }
@@ -1049,6 +1133,10 @@
                 has_dinner: false,
                 dietary_preference: 'Regular'
             };
+
+            stopActivePlayback();
+            currentSessionId = null;
+            resetButtonUIState();
 
             document.getElementById('chat-messages').innerHTML = '';
             document.getElementById('rec-name').textContent = '-';
