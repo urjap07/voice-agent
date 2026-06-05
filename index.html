@@ -205,20 +205,24 @@
             height: 8px;
             background-color: var(--success);
             border-radius: 2px;
+            transition: transform 0.08s ease;
+        }
+
+        .sound-wave-container.connecting .bar {
             animation: soundWave 1.2s ease-in-out infinite;
         }
 
-        .sound-wave-container .bar:nth-child(2) {
+        .sound-wave-container.connecting .bar:nth-child(2) {
             animation-delay: 0.15s;
             height: 18px;
         }
 
-        .sound-wave-container .bar:nth-child(3) {
+        .sound-wave-container.connecting .bar:nth-child(3) {
             animation-delay: 0.3s;
             height: 28px;
         }
 
-        .sound-wave-container .bar:nth-child(4) {
+        .sound-wave-container.connecting .bar:nth-child(4) {
             animation-delay: 0.45s;
             height: 22px;
         }
@@ -637,6 +641,13 @@
                 opacity: 0.5;
             }
         }
+
+        .disabled-during-call {
+            pointer-events: none !important;
+            opacity: 0.4;
+            filter: grayscale(30%);
+            transition: all 0.3s ease;
+        }
     </style>
 </head>
 
@@ -669,6 +680,7 @@
                         </button>
 
                         <div class="sound-wave-container" id="sound-wave">
+                            <div class="bar"></div>
                             <div class="bar"></div>
                             <div class="bar"></div>
                             <div class="bar"></div>
@@ -743,25 +755,383 @@
         // ==========================================
         // SARVAM AUDIO STREAM & WEBHOOK COUPLING LOGIC
         // ==========================================
+        let isCallActive = false;
         let mediaRecorder;
         let audioChunks = [];
         let isRecording = false;
         let currentSessionId = null;
         let activeAudioSource = null;
         let activeAudioContext = null;
+        let vadAudioContext = null;
+        let vadActive = false;
 
         const mainBtn = document.getElementById('vapi-btn');
         const widgetBtn = document.getElementById('bottom-phone-widget');
         const saveStatus = document.getElementById('save-status');
         const soundWave = document.getElementById('sound-wave');
 
-        mainBtn.addEventListener('click', toggleRecordingFlow);
-        widgetBtn.addEventListener('click', toggleRecordingFlow);
+        mainBtn.addEventListener('click', handleVoiceButtonClick);
+        widgetBtn.addEventListener('click', handleVoiceButtonClick);
+
+        function handleVoiceButtonClick() {
+            if (isCallActive) {
+                endVoiceCall();
+            } else {
+                startVoiceCall();
+            }
+        }
+
+        function disableOtherUIElements(disabled) {
+            const elements = [
+                document.querySelector('.bookings-card'),
+                document.querySelector('.chat-card'),
+                document.querySelector('.receipt-card'),
+                document.getElementById('reset-chat-btn'),
+                document.getElementById('refresh-bookings-btn')
+            ];
+            elements.forEach(el => {
+                if (el) {
+                    if (disabled) {
+                        el.classList.add('disabled-during-call');
+                    } else {
+                        el.classList.remove('disabled-during-call');
+                    }
+                }
+            });
+        }
+
+        function setCallUIState() {
+            updateVoiceButton('🛑', 'બંધ કરો (સ્ટોપ)', true);
+            widgetBtn.innerText = '🛑';
+            widgetBtn.classList.add('active');
+            mainBtn.disabled = false;
+            widgetBtn.disabled = false;
+        }
+
+        function setAgentSpeakingUI() {
+            setCallUIState();
+            setSaveStatus('એજન્ટ બોલે છે...');
+            soundWave.classList.remove('connecting');
+            soundWave.classList.add('active');
+        }
+
+        function setUserListeningUI() {
+            setCallUIState();
+            setSaveStatus('એજન્ટ સાંભળી રહ્યો છે, કૃપા કરીને બોલો...', 'ok');
+            soundWave.classList.remove('connecting');
+            soundWave.classList.add('active');
+        }
+
+        function setProcessingUI() {
+            setCallUIState();
+            setSaveStatus('પ્રોસેસિંગ / બુકિંગ અપડેટ થાય છે...');
+            soundWave.classList.remove('active');
+            soundWave.classList.add('connecting');
+            soundWave.classList.add('active');
+        }
+
+        function setSaveStatus(text, type = '') {
+            saveStatus.textContent = text;
+            saveStatus.className = type;
+        }
+
+        function updateVoiceButton(icon, text, isActive = false) {
+            const iconEl = mainBtn.querySelector('.btn-icon');
+            const textEl = mainBtn.querySelector('.btn-text');
+            if (iconEl) iconEl.textContent = icon;
+            if (textEl) textEl.textContent = text;
+            if (isActive) mainBtn.classList.add('active'); else mainBtn.classList.remove('active');
+        }
+
+        function resetButtonUIState() {
+            updateVoiceButton('📞', 'વાત કરો');
+            widgetBtn.innerText = '📞';
+            widgetBtn.className = 'bottom-phone-btn';
+            mainBtn.disabled = false;
+            widgetBtn.disabled = false;
+            soundWave.classList.remove('active');
+            soundWave.classList.remove('connecting');
+        }
+
+        async function startVoiceCall() {
+            isCallActive = true;
+            currentSessionId = 'voice_' + Date.now();
+            disableOtherUIElements(true);
+            setCallUIState();
+            setSaveStatus('કનેક્ટ થઈ રહ્યું છે...');
+            soundWave.classList.add('connecting');
+            soundWave.classList.add('active');
+
+            try {
+                const welcomeUrl = `/api/voice-welcome?sessionId=${currentSessionId}`;
+                const response = await fetch(welcomeUrl);
+                if (!isCallActive) return;
+
+                if (!response.ok) throw new Error(`Welcome API failed with status ${response.status}`);
+                const arrayBuffer = await response.arrayBuffer();
+                if (!isCallActive) return;
+
+                setAgentSpeakingUI();
+                await playAudioBuffer(arrayBuffer);
+                if (!isCallActive) return;
+
+                await runConversationLoop();
+            } catch (err) {
+                console.error('Welcome message fetch failed:', err);
+                setSaveStatus(`કનેક્શન નિષ્ફળ થયું: ${err.message}`, 'err');
+                endVoiceCall();
+            }
+        }
+
+        async function endVoiceCall() {
+            isCallActive = false;
+            stopActivePlayback();
+            stopSilenceDetection();
+
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                try {
+                    mediaRecorder.stop();
+                } catch (e) { }
+            }
+
+            const sessionIdToSave = currentSessionId;
+
+            resetButtonUIState();
+            disableOtherUIElements(false);
+
+            if (sessionIdToSave) {
+                setSaveStatus('બુકિંગ સાચવવામાં આવી રહ્યું છે... / Saving booking...', 'connecting');
+                try {
+                    const response = await fetch('/api/stop-voice-call', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sessionId: sessionIdToSave })
+                    });
+                    const result = await response.json();
+
+                    if (result.saved) {
+                        setSaveStatus('બુકિંગ સફળતાપૂર્વક સાચવવામાં આવ્યું છે!', 'ok');
+                        loadRecentBookings();
+                    } else if (result.incomplete) {
+                        const fieldMap = {
+                            'mumukshu_name': 'નામ',
+                            'mumukshu_phone': 'ફોન નંબર',
+                            'start_date': 'ચેક-ઇન તારીખ',
+                            'end_date': 'ચેક-આઉટ તારીખ'
+                        };
+                        const missingNames = result.missing_fields.map(f => fieldMap[f] || f).join(', ');
+                        setSaveStatus(`ખૂટતી જરૂરી વિગતો: ${missingNames}`, 'err');
+                    } else {
+                        setSaveStatus(`ભૂલ: ${result.error || 'બુકિંગ સાચવી શકાયું નથી'}`, 'err');
+                    }
+                } catch (err) {
+                    console.error('Error finalising voice call booking:', err);
+                    setSaveStatus(`કનેક્શન નિષ્ફળ થયું: ${err.message}`, 'err');
+                }
+            } else {
+                setSaveStatus('');
+            }
+
+            currentSessionId = null;
+        }
+
+        async function runConversationLoop() {
+            while (isCallActive) {
+                try {
+                    const audioBlob = await recordUserAudio();
+                    if (!isCallActive) return;
+                    if (!audioBlob) continue;
+
+                    setProcessingUI();
+                    const responseArrayBuffer = await sendAudioToServer(audioBlob);
+                    if (!isCallActive) return;
+
+                    setAgentSpeakingUI();
+                    await playAudioBuffer(responseArrayBuffer);
+                    if (!isCallActive) return;
+                } catch (err) {
+                    console.error('Conversation loop error:', err);
+                    setSaveStatus(`કનેક્શનમાં ખામી આવી છે: ${err.message}`, 'err');
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                }
+            }
+        }
+
+        async function recordUserAudio() {
+            return new Promise(async (resolve, reject) => {
+                let stream;
+                try {
+                    setUserListeningUI();
+                    audioChunks = [];
+
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        audio: {
+                            autoGainControl: true,
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            channelCount: 1
+                        }
+                    });
+
+                    if (!isCallActive) {
+                        stream.getTracks().forEach(track => track.stop());
+                        resolve(null);
+                        return;
+                    }
+
+                    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                    isRecording = true;
+
+                    mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) audioChunks.push(event.data);
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        isRecording = false;
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        resolve(audioBlob);
+                    };
+
+                    mediaRecorder.start();
+
+                    startSilenceDetection(stream, () => {
+                        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                            try {
+                                mediaRecorder.stop();
+                            } catch (e) { }
+                        }
+                        stream.getTracks().forEach(track => track.stop());
+                    });
+
+                } catch (err) {
+                    if (stream) {
+                        try {
+                            stream.getTracks().forEach(track => track.stop());
+                        } catch (e) { }
+                    }
+                    isRecording = false;
+                    reject(err);
+                }
+            });
+        }
+
+        function startSilenceDetection(stream, onSilence) {
+            try {
+                stopSilenceDetection();
+
+                vadAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = vadAudioContext.createMediaStreamSource(stream);
+                const analyser = vadAudioContext.createAnalyser();
+                analyser.fftSize = 512;
+                source.connect(analyser);
+
+                const bufferLength = analyser.fftSize;
+                const dataArray = new Float32Array(bufferLength);
+
+                let silenceStart = null;
+                let hasSpoken = false;
+                const recordingStartTime = Date.now();
+                vadActive = true;
+
+                const checkAudio = () => {
+                    if (!vadActive || !isCallActive) {
+                        if (vadAudioContext && vadAudioContext.state !== 'closed') {
+                            try {
+                                vadAudioContext.close();
+                            } catch (e) { }
+                        }
+                        return;
+                    }
+
+                    analyser.getFloatTimeDomainData(dataArray);
+                    let sum = 0;
+                    for (let i = 0; i < bufferLength; i++) {
+                        sum += dataArray[i] * dataArray[i];
+                    }
+                    const rms = Math.sqrt(sum / bufferLength);
+
+                    const threshold = 0.015;
+                    const now = Date.now();
+
+                    const bars = soundWave.querySelectorAll('.bar');
+                    bars.forEach((bar, idx) => {
+                        const scale = 0.3 + rms * 10 * (idx + 1);
+                        bar.style.transform = `scaleY(${Math.min(Math.max(scale, 0.3), 3.0)})`;
+                    });
+
+                    if (now - recordingStartTime > 15000) {
+                        cleanupAndStop();
+                        return;
+                    }
+
+                    if (rms > threshold) {
+                        hasSpoken = true;
+                        silenceStart = null;
+                    } else {
+                        if (silenceStart === null) {
+                            silenceStart = now;
+                        } else {
+                            const silenceDuration = now - silenceStart;
+                            const maxSilence = hasSpoken ? 1800 : 3500;
+                            if (silenceDuration > maxSilence) {
+                                cleanupAndStop();
+                                return;
+                            }
+                        }
+                    }
+
+                    requestAnimationFrame(checkAudio);
+                };
+
+                const cleanupAndStop = () => {
+                    vadActive = false;
+                    if (vadAudioContext && vadAudioContext.state !== 'closed') {
+                        try {
+                            vadAudioContext.close();
+                        } catch (e) { }
+                    }
+                    onSilence();
+                };
+
+                requestAnimationFrame(checkAudio);
+            } catch (e) {
+                console.error('VAD initialization failed:', e);
+                setTimeout(() => {
+                    if (vadActive && isCallActive) {
+                        vadActive = false;
+                        onSilence();
+                    }
+                }, 8000);
+            }
+        }
+
+        function stopSilenceDetection() {
+            vadActive = false;
+            if (vadAudioContext && vadAudioContext.state !== 'closed') {
+                try {
+                    vadAudioContext.close();
+                } catch (e) { }
+            }
+        }
+
+        async function sendAudioToServer(blob) {
+            const formData = new FormData();
+            formData.append('data', blob, 'voice_booking.webm');
+
+            const response = await fetch(`/api/voice-booking?sessionId=${currentSessionId}`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) throw new Error(`Server returned status: ${response.status}`);
+
+            loadRecentBookings();
+            return await response.arrayBuffer();
+        }
 
         async function playAudioBuffer(arrayBuffer) {
             return new Promise(async (resolve, reject) => {
                 try {
-                    // Stop any playing audio before starting new playback
                     stopActivePlayback();
 
                     activeAudioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -769,14 +1139,44 @@
 
                     activeAudioSource = activeAudioContext.createBufferSource();
                     activeAudioSource.buffer = audioBuffer;
-                    activeAudioSource.connect(activeAudioContext.destination);
+
+                    const analyser = activeAudioContext.createAnalyser();
+                    analyser.fftSize = 512;
+                    activeAudioSource.connect(analyser);
+                    analyser.connect(activeAudioContext.destination);
+
+                    const bufferLength = analyser.fftSize;
+                    const dataArray = new Float32Array(bufferLength);
+
+                    let isPlayingAudio = true;
+
+                    const animatePlayback = () => {
+                        if (!isPlayingAudio || !isCallActive || !activeAudioContext) return;
+
+                        analyser.getFloatTimeDomainData(dataArray);
+                        let sum = 0;
+                        for (let i = 0; i < bufferLength; i++) {
+                            sum += dataArray[i] * dataArray[i];
+                        }
+                        const rms = Math.sqrt(sum / bufferLength);
+
+                        const bars = soundWave.querySelectorAll('.bar');
+                        bars.forEach((bar, idx) => {
+                            const scale = 0.3 + rms * 10 * (idx + 1);
+                            bar.style.transform = `scaleY(${Math.min(Math.max(scale, 0.3), 3.0)})`;
+                        });
+
+                        requestAnimationFrame(animatePlayback);
+                    };
 
                     activeAudioSource.onended = () => {
+                        isPlayingAudio = false;
                         stopActivePlayback();
                         resolve();
                     };
 
                     activeAudioSource.start(0);
+                    requestAnimationFrame(animatePlayback);
                 } catch (e) {
                     reject(e);
                 }
@@ -796,175 +1196,6 @@
                 } catch (e) { }
                 activeAudioContext = null;
             }
-        }
-
-        async function toggleRecordingFlow() {
-            // Stop any playing audio response
-            stopActivePlayback();
-
-            if (!currentSessionId) {
-                try {
-                    setLoadingUIState();
-                    setSaveStatus('કનેક્ટ થઈ રહ્યું છે...');
-
-                    // Generate new session ID
-                    currentSessionId = 'voice_' + Date.now();
-                    const welcomeUrl = `/api/voice-welcome?sessionId=${currentSessionId}`;
-
-                    const response = await fetch(welcomeUrl);
-                    if (!response.ok) throw new Error(`Welcome API failed with status ${response.status}`);
-
-                    const arrayBuffer = await response.arrayBuffer();
-
-                    // Show speaking UI
-                    updateVoiceButton('🔊', 'એજન્ટ બોલે છે...');
-                    soundWave.classList.add('active');
-                    widgetBtn.innerText = '🔊';
-                    mainBtn.disabled = true;
-                    widgetBtn.disabled = true;
-
-                    await playAudioBuffer(arrayBuffer);
-
-                    setSaveStatus('એજન્ટ સાંભળી રહ્યો છે. બોલવા માટે ઉપરનું બટન દબાવો.', 'ok');
-                } catch (err) {
-                    console.error('Welcome message fetch failed:', err);
-                    setSaveStatus(`કનેક્શન નિષ્ફળ થયું: ${err.message}`, 'err');
-                    currentSessionId = null;
-                } finally {
-                    resetButtonUIState();
-                    soundWave.classList.remove('active');
-                }
-                return;
-            }
-
-            if (!isRecording) {
-                try {
-                    setLoadingUIState();
-                    setSaveStatus('');
-                    audioChunks = [];
-
-                    // 1. Request microphone access natively from browser
-                    const stream = await navigator.mediaDevices.getUserMedia({
-                        audio: {
-                            autoGainControl: true,
-                            echoCancellation: true,
-                            noiseSuppression: true,
-                            channelCount: 1
-                        }
-                    });
-
-                    // 2. Initialize MediaRecorder with standard webm audio container mapping
-                    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-
-                    mediaRecorder.ondataavailable = (event) => {
-                        if (event.data.size > 0) audioChunks.push(event.data);
-                    };
-
-                    mediaRecorder.onstop = async () => {
-                        // Compile the chunks into a unified audio blob configuration
-                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                        stream.getTracks().forEach(track => track.stop()); // Release mic handle
-
-                        await sendAudioToSarvamPipeline(audioBlob);
-                    };
-
-                    mediaRecorder.start();
-                    isRecording = true;
-
-                    // 3. Update UI states
-                    updateVoiceButton('🛑', 'બંધ કરો', true);
-                    widgetBtn.innerText = '🛑';
-                    widgetBtn.classList.add('active');
-                    soundWave.classList.add('active');
-                    mainBtn.disabled = false;
-                    widgetBtn.disabled = false;
-
-                } catch (err) {
-                    console.error('Microphone initialization crash:', err);
-                    alert('માઇક્રોફોન કનેક્શન નિષ્ફળ થયું. મહેરબાની કરીને પરવાનગી ચકાસો.');
-                    resetButtonUIState();
-                }
-            } else {
-                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                    mediaRecorder.stop();
-                }
-            }
-        }
-
-        async function sendAudioToSarvamPipeline(blob) {
-            setSaveStatus('બુકિંગ સેવ થાય છે...');
-            updateVoiceButton('⏳', 'પ્રોસેસિંગ...');
-            mainBtn.disabled = true;
-            widgetBtn.disabled = true;
-
-            // Prepare multipart form data for n8n Webhook input binary property "data"
-            const formData = new FormData();
-            formData.append('data', blob, 'voice_booking.webm');
-
-            try {
-                // Post directly to your local n8n Webhook proxy endpoint
-                const response = await fetch(`/api/voice-booking?sessionId=${currentSessionId}`, {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!response.ok) throw new Error(`Server returned status: ${response.status}`);
-
-                // 1. Catch raw binary array buffer returned from backend proxy
-                const arrayBuffer = await response.arrayBuffer();
-
-                // 2. Show agent speaking UI
-                updateVoiceButton('🔊', 'એજન્ટ બોલે છે...');
-                soundWave.classList.add('active');
-                widgetBtn.innerText = '🔊';
-                setSaveStatus('એજન્ટ જવાબ આપી રહ્યો છે...');
-
-                await playAudioBuffer(arrayBuffer);
-
-                setSaveStatus('એજન્ટ સાંભળી રહ્યો છે. ફરી બોલવા માટે બટન દબાવો.', 'ok');
-                loadRecentBookings();
-
-            } catch (err) {
-                console.error('Pipeline execution failed:', err);
-                setSaveStatus(`ભૂલ: ${err.message}`, 'err');
-            } finally {
-                resetButtonUIState();
-                soundWave.classList.remove('active');
-            }
-        }
-
-        function setSaveStatus(text, type = '') {
-            saveStatus.textContent = text;
-            saveStatus.className = type;
-        }
-
-        function updateVoiceButton(icon, text, isActive = false) {
-            const iconEl = mainBtn.querySelector('.btn-icon');
-            const textEl = mainBtn.querySelector('.btn-text');
-            if (iconEl) iconEl.textContent = icon;
-            if (textEl) textEl.textContent = text;
-            if (isActive) mainBtn.classList.add('active'); else mainBtn.classList.remove('active');
-        }
-
-        function setLoadingUIState() {
-            updateVoiceButton('⏳', 'જોડાણ ચાલુ...');
-            mainBtn.disabled = true;
-            widgetBtn.innerText = '⏳';
-            widgetBtn.disabled = true;
-        }
-
-        function resetButtonUIState() {
-            isRecording = false;
-            if (currentSessionId) {
-                updateVoiceButton('🎤', 'વાત કરો (બોલો)');
-                widgetBtn.innerText = '🎤';
-            } else {
-                updateVoiceButton('📞', 'વાત કરો');
-                widgetBtn.innerText = '📞';
-            }
-            mainBtn.disabled = false;
-            widgetBtn.className = 'bottom-phone-btn';
-            widgetBtn.disabled = false;
         }
 
         // ==========================================
@@ -1442,6 +1673,9 @@
         }
 
         function resetChat() {
+            if (isCallActive) {
+                endVoiceCall();
+            }
             bookingState.step = 0;
             bookingState.data = {
                 mumukshu_name: '',

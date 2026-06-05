@@ -47,8 +47,6 @@
         "httpMethod": "POST",
         "path": "sarvam-chat-loop",
         "responseMode": "lastNode",
-        "responseData": "firstEntryBinary",
-        "responseBinaryPropertyName": "data",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
@@ -86,7 +84,7 @@
         "text": "={{ $json.output }}",
         "ttsTargetLanguage": "gu-IN",
         "textToSpeechOptions": {
-          "speaker": "shubh",
+          "speaker": "anushka",
           "output_audio_codec": "wav"
         }
       },
