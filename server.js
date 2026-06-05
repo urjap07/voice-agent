@@ -1,5 +1,6 @@
 require('dotenv').config();
 
+const verifiedSessions = new Map();
 const express = require('express');
 const path = require('path');
 const axios = require('axios');
@@ -76,19 +77,84 @@ app.post('/verify-phone', async (req, res) => {
 });
 
 // ── API VERIFY PHONE (FOR N8N CUSTOM TOOL) ───────────────────────────────────
+// ── API VERIFY PHONE (FOR N8N CUSTOM TOOL) ───────────────────────────────────
 app.post('/api/verify-phone', async (req, res) => {
-    const phoneVal = req.body.phone_number || req.body.phone;
-    if (!phoneVal) {
-        return res.json({ found: false, error: 'Phone number is required' });
-    }
-    const cleaned = phoneVal.replace(/\D/g, '').replace(/^91/, '').slice(-10);
     try {
+        console.log('\n========================================');
+        console.log('PHONE VERIFICATION REQUEST');
+        console.log('Request Body:', JSON.stringify(req.body, null, 2));
+
+        const phoneVal = req.body.phone_number || req.body.phone;
+
+        if (!phoneVal) {
+            console.log('ERROR: No phone number received');
+
+            return res.json({
+                found: false,
+                error: 'Phone number is required'
+            });
+        }
+
+        const cleaned = String(phoneVal)
+            .replace(/\D/g, '')
+            .replace(/^91/, '')
+            .slice(-10);
+
+        console.log('Original Phone:', phoneVal);
+        console.log('Cleaned Phone:', cleaned);
+
         const { getPool } = require('./lib/db');
-        const [rows] = await getPool().query('SELECT name, centre_name FROM registered_users WHERE RIGHT(phone, 10) = ?', [cleaned]);
-        if (!rows.length) return res.json({ found: false });
-        res.json({ found: true, name: rows[0].name, centre_name: rows[0].centre_name });
+
+        const [rows] = await getPool().query(
+            `
+            SELECT
+                user_id,
+                phone,
+                name,
+                centre_name
+            FROM registered_users
+            WHERE RIGHT(phone,10)=?
+            LIMIT 1
+            `,
+            [cleaned]
+        );
+
+        console.log('Rows Found:', rows.length);
+
+        if (!rows.length) {
+            console.log('Phone number NOT found');
+
+            return res.json({
+                found: false,
+                phone_number: cleaned,
+                message: 'Phone number not registered'
+            });
+        }
+
+        const user = rows[0];
+
+        console.log('User Found:', {
+            user_id: user.user_id,
+            phone: user.phone,
+            name: user.name,
+            centre_name: user.centre_name
+        });
+
+        return res.json({
+            found: true,
+            user_id: user.user_id,
+            phone: user.phone,
+            name: user.name,
+            centre_name: user.centre_name
+        });
+
     } catch (err) {
-        res.status(500).json({ found: false, error: err.message });
+        console.error('[API VERIFY PHONE ERROR]', err);
+
+        return res.status(500).json({
+            found: false,
+            error: err.message
+        });
     }
 });
 
@@ -230,76 +296,277 @@ app.get('/api/voice-welcome', async (req, res) => {
 });
 
 // ── VOICE BOOKING PROXY (Sarvam → n8n → Sarvam) ──────────────────────────────
+// ── VOICE BOOKING PROXY (Phone Verification in Server.js) ────────────────────
 app.post('/api/voice-booking', upload.single('data'), async (req, res) => {
-    if (!req.file) return res.status(400).json({ error: 'No audio file received' });
+    if (!req.file) {
+        return res.status(400).json({ error: 'No audio file received' });
+    }
+
     const { sessionId } = req.query;
-    if (!sessionId) return res.status(400).json({ error: 'sessionId query param is required' });
+
+    if (!sessionId) {
+        return res.status(400).json({ error: 'sessionId query param is required' });
+    }
 
     try {
+
+        // ==========================================================
+        // STEP 1: VERIFY PHONE NUMBER ON FIRST MESSAGE ONLY
+        // ==========================================================
+        if (!verifiedSessions.has(sessionId)) {
+
+            console.log(`[Phone Verification] Session: ${sessionId}`);
+
+            try {
+                const sttForm = new FormData();
+
+                sttForm.append('file', req.file.buffer, {
+                    filename: 'audio.webm',
+                    contentType: 'audio/webm'
+                });
+
+                const sttResponse = await axios.post(
+                    'https://api.sarvam.ai/speech-to-text',
+                    sttForm,
+                    {
+                        headers: {
+                            ...sttForm.getHeaders(),
+                            'api-subscription-key': process.env.SARVAM_API_KEY
+                        }
+                    }
+                );
+
+                let transcript = '';
+
+                if (Array.isArray(sttResponse.data)) {
+                    transcript = sttResponse.data?.[0]?.transcript || '';
+                } else {
+                    transcript =
+                        sttResponse.data?.transcript ||
+                        sttResponse.data?.results?.[0]?.transcript ||
+                        '';
+                }
+
+                console.log('[STT Transcript]:', transcript);
+
+                const digits = String(transcript).replace(/\D/g, '');
+
+                if (digits.length < 10) {
+
+                    const audio = await generateSarvamTts(
+                        'કૃપા કરીને આપનો નોંધાયેલ ૧૦ અંકનો મોબાઈલ નંબર જણાવો.'
+                    );
+
+                    res.set('Content-Type', 'audio/wav');
+                    return res.send(audio);
+                }
+
+                const phoneNumber = digits.slice(-10);
+
+                console.log('[Extracted Phone]:', phoneNumber);
+
+                const { getPool } = require('./lib/db');
+
+                const [rows] = await getPool().query(
+                    `
+                    SELECT
+                        user_id,
+                        phone,
+                        name,
+                        centre_name
+                    FROM registered_users
+                    WHERE RIGHT(phone,10)=?
+                    LIMIT 1
+                    `,
+                    [phoneNumber]
+                );
+
+                if (!rows.length) {
+
+                    console.log('[Verification Failed] Number not found');
+
+                    const audio = await generateSarvamTts(
+                        'માફ કરશો, આ મોબાઇલ નંબર અમારી સિસ્ટમમાં નોંધાયેલ નથી. કૃપા કરીને કેન્દ્ર સાથે સંપર્ક કરો.'
+                    );
+
+                    res.set('Content-Type', 'audio/wav');
+                    return res.send(audio);
+                }
+
+                const user = rows[0];
+
+                console.log('[Verification Success]', user);
+
+                verifiedSessions.set(sessionId, {
+                    verified: true,
+                    user_id: user.user_id,
+                    phone: user.phone,
+                    name: user.name,
+                    centre_name: user.centre_name
+                });
+
+                const welcomeAudio = await generateSarvamTts(
+                    `${user.name}ભાઈ અથવા બહેન, નમસ્કાર. ${user.centre_name} તરફથી આપનું સ્વાગત છે. આપ ક્યારથી ક્યાં સુધી આવવા માંગો છો?`
+                );
+
+                res.set('Content-Type', 'audio/wav');
+                return res.send(welcomeAudio);
+
+            } catch (sttErr) {
+
+                console.error('[STT Verification Error]', sttErr);
+
+                return res.status(500).json({
+                    error: 'Phone verification failed',
+                    details: sttErr.message
+                });
+            }
+        }
+
+        // ==========================================================
+        // STEP 2: ALREADY VERIFIED → FORWARD TO N8N
+        // ==========================================================
+
         const history = getTranscriptForSession(sessionId);
+
         const n8nForm = new FormData();
-        n8nForm.append('data', req.file.buffer, { filename: 'audio.webm', contentType: 'audio/webm' });
+
+        n8nForm.append(
+            'data',
+            req.file.buffer,
+            {
+                filename: 'audio.webm',
+                contentType: 'audio/webm'
+            }
+        );
+
         n8nForm.append('history', history || '');
 
-        const n8nUrl = `${process.env.N8N_WEBHOOK_URL}?sessionId=${sessionId}`;
-        console.log(`Forwarding audio to n8n: ${n8nUrl}`);
+        const n8nUrl =
+            `${process.env.N8N_WEBHOOK_URL}?sessionId=${sessionId}`;
+
+        console.log(
+            `[Verified User] Forwarding audio to n8n: ${n8nUrl}`
+        );
 
         let n8nRes;
+
         try {
-            n8nRes = await axios.post(n8nUrl, n8nForm, {
-                headers: {
-                    ...n8nForm.getHeaders()
-                },
-                responseType: 'arraybuffer'
-            });
+
+            n8nRes = await axios.post(
+                n8nUrl,
+                n8nForm,
+                {
+                    headers: {
+                        ...n8nForm.getHeaders()
+                    },
+                    responseType: 'arraybuffer'
+                }
+            );
+
         } catch (err) {
-            const errString = err.response && err.response.data
-                ? (Buffer.isBuffer(err.response.data) ? err.response.data.toString() : JSON.stringify(err.response.data))
-                : '';
-            const isWebhookNotRegistered = (err.response && err.response.status === 404) ||
+
+            const errString =
+                err.response && err.response.data
+                    ? (
+                        Buffer.isBuffer(err.response.data)
+                            ? err.response.data.toString()
+                            : JSON.stringify(err.response.data)
+                    )
+                    : '';
+
+            const isWebhookNotRegistered =
+                (err.response && err.response.status === 404) ||
                 errString.includes('not registered') ||
                 (err.message && err.message.includes('404'));
 
-            if (isWebhookNotRegistered && n8nUrl.includes('/webhook/')) {
-                const testUrl = n8nUrl.replace('/webhook/', '/webhook-test/');
-                console.log(`Webhook not registered. Trying test webhook URL: ${testUrl}`);
+            if (
+                isWebhookNotRegistered &&
+                n8nUrl.includes('/webhook/')
+            ) {
 
-                const n8nFormTest = new FormData();
-                n8nFormTest.append('data', req.file.buffer, { filename: 'audio.webm', contentType: 'audio/webm' });
-                n8nFormTest.append('history', history || '');
+                const testUrl =
+                    n8nUrl.replace(
+                        '/webhook/',
+                        '/webhook-test/'
+                    );
 
-                n8nRes = await axios.post(testUrl, n8nFormTest, {
-                    headers: {
-                        ...n8nFormTest.getHeaders()
-                    },
-                    responseType: 'arraybuffer'
-                });
+                console.log(
+                    `Webhook not registered. Trying: ${testUrl}`
+                );
+
+                const retryForm = new FormData();
+
+                retryForm.append(
+                    'data',
+                    req.file.buffer,
+                    {
+                        filename: 'audio.webm',
+                        contentType: 'audio/webm'
+                    }
+                );
+
+                retryForm.append(
+                    'history',
+                    history || ''
+                );
+
+                n8nRes = await axios.post(
+                    testUrl,
+                    retryForm,
+                    {
+                        headers: {
+                            ...retryForm.getHeaders()
+                        },
+                        responseType: 'arraybuffer'
+                    }
+                );
+
             } else {
+
                 throw err;
             }
         }
 
-        const contentType = n8nRes.headers['content-type'] || '';
+        const contentType =
+            n8nRes.headers['content-type'] || '';
+
         if (contentType.includes('application/json')) {
-            console.error('[n8n Response Error]: Received JSON instead of audio:', n8nRes.data.toString());
+
+            console.error(
+                '[n8n Error]',
+                Buffer.from(n8nRes.data).toString()
+            );
+
             res.set('Content-Type', 'application/json');
-            return res.status(500).send(n8nRes.data);
+
+            return res
+                .status(500)
+                .send(n8nRes.data);
         }
-        res.set('Content-Type', contentType || 'audio/wav');
-        return res.send(Buffer.from(n8nRes.data));
+
+        res.set(
+            'Content-Type',
+            contentType || 'audio/wav'
+        );
+
+        return res.send(
+            Buffer.from(n8nRes.data)
+        );
 
     } catch (err) {
-        if (err.response) {
-            const errText = Buffer.isBuffer(err.response.data) ? err.response.data.toString() : JSON.stringify(err.response.data);
-            console.error('[n8n API Error]:', errText);
-            return res.status(500).json({ error: 'n8n pipeline failed', details: errText });
-        } else {
-            console.error('[General Error]:', err);
-            return res.status(500).json({ error: 'Pipeline failed', message: err.message, stack: err.stack });
-        }
+
+        console.error(
+            '[VOICE BOOKING ERROR]',
+            err
+        );
+
+        return res.status(500).json({
+            error: 'Pipeline failed',
+            message: err.message
+        });
     }
 });
-
 // ── STOP VOICE CALL & SAVE DRAFT BOOKING ──────────────────────────────────────
 function deserializeN8nData(arr) {
     if (!Array.isArray(arr)) return arr;
@@ -350,28 +617,28 @@ function getTranscriptForSession(sessionId) {
         const path = require('path');
         const dbPath = path.join(process.env.HOME || '/Users/Urja', '.n8n', 'database.sqlite');
         const db = new DatabaseSync(dbPath);
-        
+
         // Fetch recent executions to scan for the sessionId
         const query = db.prepare("SELECT executionId, data FROM execution_data ORDER BY executionId DESC LIMIT 200");
         const rows = query.all();
-        
+
         const turns = [];
-        
+
         for (const row of rows) {
             try {
                 const rawArr = JSON.parse(row.data);
                 const dataObj = deserializeN8nData(rawArr);
-                
+
                 if (dataObj && dataObj.resultData && dataObj.resultData.runData) {
                     const runData = dataObj.resultData.runData;
                     if (runData['Webhook']) {
                         const webhookItem = runData['Webhook'][0].data.main[0][0].json;
                         const sessId = webhookItem.query ? webhookItem.query.sessionId : null;
-                        
+
                         if (sessId === sessionId) {
                             let userSpoke = null;
                             let agentReplied = null;
-                            
+
                             // User speech
                             if (runData['Speech to text']) {
                                 const stt = runData['Speech to text'][0].data.main[0][0].json;
@@ -380,7 +647,7 @@ function getTranscriptForSession(sessionId) {
                                     userSpoke = JSON.stringify(userSpoke);
                                 }
                             }
-                            
+
                             // Agent reply
                             if (runData['AI Agent']) {
                                 const agent = runData['AI Agent'][0].data.main[0][0].json;
@@ -389,7 +656,7 @@ function getTranscriptForSession(sessionId) {
                                     agentReplied = JSON.stringify(agentReplied);
                                 }
                             }
-                            
+
                             turns.push({
                                 executionId: row.executionId,
                                 user: userSpoke,
@@ -402,10 +669,10 @@ function getTranscriptForSession(sessionId) {
                 // Ignore parsing errors for single executions
             }
         }
-        
+
         // Sort turns chronologically
         turns.sort((a, b) => a.executionId - b.executionId);
-        
+
         // Build transcript string
         let transcript = "";
         for (const turn of turns) {
