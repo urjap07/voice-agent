@@ -236,8 +236,10 @@ app.post('/api/voice-booking', upload.single('data'), async (req, res) => {
     if (!sessionId) return res.status(400).json({ error: 'sessionId query param is required' });
 
     try {
+        const history = getTranscriptForSession(sessionId);
         const n8nForm = new FormData();
         n8nForm.append('data', req.file.buffer, { filename: 'audio.webm', contentType: 'audio/webm' });
+        n8nForm.append('history', history || '');
 
         const n8nUrl = `${process.env.N8N_WEBHOOK_URL}?sessionId=${sessionId}`;
         console.log(`Forwarding audio to n8n: ${n8nUrl}`);
@@ -264,6 +266,7 @@ app.post('/api/voice-booking', upload.single('data'), async (req, res) => {
 
                 const n8nFormTest = new FormData();
                 n8nFormTest.append('data', req.file.buffer, { filename: 'audio.webm', contentType: 'audio/webm' });
+                n8nFormTest.append('history', history || '');
 
                 n8nRes = await axios.post(testUrl, n8nFormTest, {
                     headers: {
@@ -276,7 +279,13 @@ app.post('/api/voice-booking', upload.single('data'), async (req, res) => {
             }
         }
 
-        res.set('Content-Type', n8nRes.headers['content-type'] || 'audio/wav');
+        const contentType = n8nRes.headers['content-type'] || '';
+        if (contentType.includes('application/json')) {
+            console.error('[n8n Response Error]: Received JSON instead of audio:', n8nRes.data.toString());
+            res.set('Content-Type', 'application/json');
+            return res.status(500).send(n8nRes.data);
+        }
+        res.set('Content-Type', contentType || 'audio/wav');
         return res.send(Buffer.from(n8nRes.data));
 
     } catch (err) {
@@ -400,11 +409,13 @@ function getTranscriptForSession(sessionId) {
         // Build transcript string
         let transcript = "";
         for (const turn of turns) {
-            if (turn.user) {
-                transcript += `Guest: ${turn.user}\n`;
-            }
-            if (turn.agent) {
-                transcript += `Booking Assistant: ${turn.agent}\n`;
+            const userText = (turn.user || "").trim();
+            const agentText = (turn.agent || "").trim();
+            if (userText || agentText) {
+                transcript += `Guest: ${userText}\n`;
+                if (agentText) {
+                    transcript += `Booking Assistant: ${agentText}\n`;
+                }
             }
         }
         return transcript;

@@ -20,6 +20,9 @@ async function runTest() {
         fs.writeFileSync(welcomeWavPath, Buffer.from(welcomeRes.data));
         console.log(`Saved welcome audio to: ${welcomeWavPath}`);
 
+        console.log("Sleeping for 5 seconds to let welcome execution finish writing to DB...");
+        await new Promise(resolve => setTimeout(resolve, 5000));
+
         // 1. Generate speech via Sarvam AI
         console.log("Calling Sarvam AI TTS to generate phone number speech...");
         const ttsRes = await axios.post('https://api.sarvam.ai/text-to-speech', {
