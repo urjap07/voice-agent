@@ -642,11 +642,40 @@
             }
         }
 
-        .disabled-during-call {
-            pointer-events: none !important;
-            opacity: 0.4;
-            filter: grayscale(30%);
-            transition: all 0.3s ease;
+        /* Voice call polling indicator */
+        .voice-live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--success);
+            background: var(--success-light);
+            padding: 2px 8px;
+            border-radius: 50px;
+        }
+
+        .voice-live-indicator::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 1s infinite;
+        }
+
+        .receipt-item .val.updated {
+            animation: highlightVal 1s ease;
+        }
+
+        @keyframes highlightVal {
+            0% {
+                color: var(--success);
+            }
+
+            100% {
+                color: #1e1b4b;
+            }
         }
     </style>
 </head>
@@ -782,22 +811,13 @@
         }
 
         function disableOtherUIElements(disabled) {
-            const elements = [
-                document.querySelector('.bookings-card'),
-                document.querySelector('.chat-card'),
-                document.querySelector('.receipt-card'),
-                document.getElementById('reset-chat-btn'),
-                document.getElementById('refresh-bookings-btn')
-            ];
-            elements.forEach(el => {
-                if (el) {
-                    if (disabled) {
-                        el.classList.add('disabled-during-call');
-                    } else {
-                        el.classList.remove('disabled-during-call');
-                    }
-                }
-            });
+            // Sections are no longer disabled during voice call — all UI remains interactive
+            const badge = document.getElementById('receipt-badge');
+            if (disabled) {
+                badge.innerHTML = '<span class="voice-live-indicator">🎙️ LIVE</span>';
+            } else {
+                // Badge will be updated by polling or reset
+            }
         }
 
         function setCallUIState() {
@@ -856,8 +876,10 @@
         async function startVoiceCall() {
             isCallActive = true;
             currentSessionId = 'voice_' + Date.now();
+            lastKnownBookingId = null;
             disableOtherUIElements(true);
             setCallUIState();
+            startVoiceLivePolling();
             setSaveStatus('કનેક્ટ થઈ રહ્યું છે...');
             soundWave.classList.add('connecting');
             soundWave.classList.add('active');
@@ -887,20 +909,19 @@
             isCallActive = false;
             stopActivePlayback();
             stopSilenceDetection();
+            stopVoiceLivePolling();
 
             if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                try {
-                    mediaRecorder.stop();
-                } catch (e) { }
+                try { mediaRecorder.stop(); } catch (e) { }
             }
 
             const sessionIdToSave = currentSessionId;
-
+            currentSessionId = null;
             resetButtonUIState();
             disableOtherUIElements(false);
 
             if (sessionIdToSave) {
-                setSaveStatus('બુકિંગ સાચવવામાં આવી રહ્યું છે... / Saving booking...', 'connecting');
+                setSaveStatus('બુકિંગ સાચવવામાં આવી રહ્યું છે...', 'connecting');
                 try {
                     const response = await fetch('/api/stop-voice-call', {
                         method: 'POST',
@@ -931,8 +952,6 @@
             } else {
                 setSaveStatus('');
             }
-
-            currentSessionId = null;
         }
 
         async function runConversationLoop() {
@@ -1199,6 +1218,95 @@
         }
 
         // ==========================================
+        // VOICE LIVE PREVIEW POLLING
+        // ==========================================
+        let voicePollingInterval = null;
+        let lastKnownBookingId = null;
+
+        function startVoiceLivePolling() {
+            stopVoiceLivePolling();
+            // Poll every 3 seconds during voice call
+            voicePollingInterval = setInterval(async () => {
+                if (!isCallActive) { stopVoiceLivePolling(); return; }
+                try {
+                    const res = await fetch('/api/bookings');
+                    if (!res.ok) return;
+                    const bookings = await res.json();
+                    if (!bookings || bookings.length === 0) return;
+
+                    const latest = bookings[0];
+
+                    // If a new booking appeared, update everything
+                    if (latest.booking_id !== lastKnownBookingId) {
+                        lastKnownBookingId = latest.booking_id;
+                        updateReceiptFromVoice(latest);
+                        renderBookingsList(bookings);
+                    }
+                } catch (e) { /* silent fail */ }
+            }, 3000);
+        }
+
+        function stopVoiceLivePolling() {
+            if (voicePollingInterval) {
+                clearInterval(voicePollingInterval);
+                voicePollingInterval = null;
+            }
+        }
+
+        function updateReceiptFromVoice(booking) {
+            const setVal = (id, val) => {
+                const el = document.getElementById(id);
+                if (el && val && val !== '-') {
+                    el.textContent = val;
+                    el.classList.remove('updated');
+                    void el.offsetWidth; // reflow to restart animation
+                    el.classList.add('updated');
+                }
+            };
+
+            setVal('rec-name', booking.mumukshu_name || '-');
+            setVal('rec-phone', booking.mumukshu_phone || '-');
+            setVal('rec-start', formatDate(booking.start_date));
+            setVal('rec-end', formatDate(booking.end_date));
+
+            const meals = [];
+            if (booking.has_breakfast) meals.push('નાસ્તો');
+            if (booking.has_lunch) meals.push('લંચ');
+            if (booking.has_dinner) meals.push('ડિનર');
+            setVal('rec-meals', meals.length > 0 ? meals.join(', ') : 'કોઈ ભોજન નહીં');
+
+            const dietMap = { 'Regular': 'રેગ્યુલર', 'Jain': 'જૈન', 'Non-spicy': 'મોળું' };
+            setVal('rec-diet', dietMap[booking.dietary_preference] || booking.dietary_preference || '-');
+
+            // Mark receipt as complete
+            const badge = document.getElementById('receipt-badge');
+            badge.textContent = 'સાચવેલ ✓';
+            badge.className = 'receipt-badge complete';
+
+            const statusText = document.getElementById('receipt-status-text');
+            statusText.innerHTML = `✔️ વૉઇસ બુકિંગ સફળ! (ID: ${booking.booking_id})`;
+            statusText.style.color = 'var(--success)';
+            statusText.style.fontWeight = '600';
+        }
+
+        function renderBookingsList(bookings) {
+            const listContainer = document.getElementById('bookings-list');
+            if (!bookings || bookings.length === 0) {
+                listContainer.innerHTML = '<p class="empty-state">હજુ સુધી કોઈ બુકિંગ નથી.</p>';
+                return;
+            }
+            listContainer.innerHTML = bookings.map(b => `
+                <div class="booking-item-card">
+                    <div class="booking-item-info">
+                        <h5>${escapeHtml(b.mumukshu_name)}</h5>
+                        <p>📞 ${escapeHtml(b.mumukshu_phone)} | 📅 ${formatDate(b.start_date)} થી ${formatDate(b.end_date)}</p>
+                    </div>
+                    <div class="booking-item-badge">ID: ${b.booking_id}</div>
+                </div>
+            `).join('');
+        }
+
+        // ==========================================
         // EXCLUSIVE CHAT CONFIGURATION FLOW
         // ==========================================
         const bookingState = {
@@ -1353,19 +1461,7 @@
                 const res = await fetch('/api/bookings');
                 if (!res.ok) throw new Error('Failed to fetch');
                 const data = await res.json();
-                if (data.length === 0) {
-                    listContainer.innerHTML = '<p class="empty-state">હજુ સુધી કોઈ બુકિંગ નથી.</p>';
-                    return;
-                }
-                listContainer.innerHTML = data.map(b => `
-                    <div class="booking-item-card">
-                        <div class="booking-item-info">
-                            <h5>${escapeHtml(b.mumukshu_name)}</h5>
-                            <p>📞 ${escapeHtml(b.mumukshu_phone)} | 📅 ${formatDate(b.start_date)} થી ${formatDate(b.end_date)}</p>
-                        </div>
-                        <div class="booking-item-badge">ID: ${b.booking_id}</div>
-                    </div>
-                `).join('');
+                renderBookingsList(data);
             } catch (e) {
                 listContainer.innerHTML = `<p class="empty-state">બુકિંગ્સ લોડ કરવામાં ભૂલ આવી છે.</p>`;
             }
