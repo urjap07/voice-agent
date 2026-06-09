@@ -6,6 +6,35 @@ const destPath = path.join(__dirname, 'workflow_voice_agent_updated.json');
 
 const data = JSON.parse(fs.readFileSync(srcPath, 'utf8'));
 
+// Re-configure verify_phone as a MySQL Tool node - disabled to keep it as HTTP Request Tool
+// const verifyPhoneIndex = data.nodes.findIndex(node => node.name === 'verify_phone');
+// if (verifyPhoneIndex !== -1) {
+//     data.nodes[verifyPhoneIndex] = {
+//         "parameters": {
+//             "descriptionType": "manual",
+//             "toolDescription": "Use this tool immediately when the user provides a phone number to check if they are registered. Input parameter: phone_number (string, exactly 10 digits, no country code, no spaces). Returns: name, centre_name, and phone if registered, empty result if not found.",
+//             "operation": "executeQuery",
+//             "query": "SELECT name, centre_name, phone FROM registered_users WHERE RIGHT(phone, 10) = '{{ $fromAI(\"phone_number\", \"The clean 10-digit mobile number of the user\", \"string\") }}' LIMIT 1",
+//             "options": {}
+//         },
+//         "type": "n8n-nodes-base.mySqlTool",
+//         "typeVersion": 1,
+//         "position": [
+//             464,
+//             192
+//         ],
+//         "id": "0e33dfc5-7be0-4a27-bc31-eba1fcaae1a3",
+//         "name": "verify_phone",
+//         "credentials": {
+//             "mySql": {
+//                 "id": "KRaAv6CI6cLNIqg9",
+//                 "name": "MySQL account"
+//             }
+//         }
+//     };
+//     console.log("Configured verify_phone as MySQL Tool node with correct credential.");
+// }
+
 data.nodes.forEach(node => {
     // 1. Update Simple Memory sessionKey expression
     if (node.name === 'Simple Memory' || node.type === '@n8n/n8n-nodes-langchain.memoryBufferWindow') {
@@ -40,16 +69,118 @@ data.nodes.forEach(node => {
         }
     }
 
-    // 5. Inject chat history expression into AI Agent System Prompt
+    // 5. Inject chat history and verification details into AI Agent System Prompt
     if (node.name === 'AI Agent' || node.type === '@n8n/n8n-nodes-langchain.agent') {
-        const originalText = node.parameters.text;
+        let originalText = node.parameters.text;
+
+        // Clarify strict rules to avoid calling verify_phone without a phone number input
+        originalText = originalText.replace(
+            /\* verify_phone ટૂલ કૉલ કર્યા વગર આગળ વધવું સખત મનાઈ છે\./g,
+            "* જો યુઝર ફોન નંબર ન આપે, તો verify_phone ટૂલ કૉલ કરવો નહીં અને માત્ર ઉપર મુજબના રીમાઇન્ડર પૂછવા. પરંતુ એકવાર યુઝર ફોન નંબર આપે, તે પછી verify_phone ટૂલ કૉલ કર્યા વગર આગળ વધવું સખત મનાઈ છે."
+        );
+        originalText = originalText.replace(
+            /\* verify_phone ટૂલ કૉલ કર્યા વગર આગળ વધવું નહીં\./g,
+            "* જો યુઝર ફોન નંબર ન આપે, તો verify_phone ટૂલ કૉલ કરવો નહીં."
+        );
+
         const escapedText = originalText.replace(/"/g, '\\"').replace(/\r/g, '').replace(/\n/g, '\\n');
-        node.parameters.text = `={{ "${escapedText}" + ($('Webhook').item.json.body.history ? "\\n\\nઆ કૉલનો અગાઉનો ઇતિહાસ:\\n" + $('Webhook').item.json.body.history : "") }}`;
-        console.log("Updated AI Agent prompt to inject dynamic history.");
+        node.parameters.text = `={{ "${escapedText}" + ($('Webhook').item.json.body.history ? "\\n\\nઆ કૉલનો અગાઉનો ઇતિહાસ:\\n" + $('Webhook').item.json.body.history : "") + ($('Webhook').item.json.query.verified === 'true' ? "\\n\\n[સિસ્ટમ માહિતી: યુઝર વેરીફાઈડ છે. નામ: " + $('Webhook').item.json.query.name + ", સેન્ટર: " + $('Webhook').item.json.query.centre_name + ", ફોન: " + $('Webhook').item.json.query.phone + ". જો સિસ્ટમ માહિતી દર્શાવે કે યુઝર વેરીફાઈડ છે, તો ફરીથી verify_phone ટૂલ કૉલ કરવાની જરૂર નથી અને સીધા જ આગળના સ્ટેપ પર વધી શકો છો. તમારે હવે યુઝરને '" + $('Webhook').item.json.query.name + ", નમસ્કાર! " + $('Webhook').item.json.query.centre_name + " તરફથી આપનું સ્વાગત છે. આપ ક્યારથી ક્યાં સુધી આવવા માંગો છો?' કહીને આવકારવા અને તારીખો વિશે પૂછવું.]" : "") }}`;
+        console.log("Updated AI Agent prompt to inject dynamic history and verification info.");
+    }
+
+    // 6. Update verify_phone tool parameters with $fromAI
+    if (node.name === 'verify_phone') {
+        node.parameters.toolDescription = "Checks if a 10-digit phone number is registered. Call this tool ONLY when the user explicitly provides their phone number. Do NOT call this tool if no phone number has been provided yet.";
+        node.parameters.jsonBody = `={
+  "phone_number": "{{ $fromAI('phone_number', 'The clean 10-digit mobile number of the user', 'string') }}",
+  "sessionId": "{{ $('Webhook').item.json.query.sessionId }}"
+}
+`;
+        console.log("Updated verify_phone tool parameters and description.");
+    }
+
+    // 7. Update save_booking tool parameters with $fromAI
+    if (node.name === 'save_booking') {
+        node.parameters.jsonBody = `={
+  "mumukshu_name": "{{ $fromAI('mumukshu_name', 'The guest name retrieved during phone registration', 'string') }}",
+  "mumukshu_phone": "{{ $fromAI('mumukshu_phone', 'The 10-digit registered phone number', 'string') }}",
+  "start_date": "{{ $fromAI('start_date', 'The check-in/arrival date in YYYY-MM-DD format', 'string') }}",
+  "end_date": "{{ $fromAI('end_date', 'The check-out/departure date in YYYY-MM-DD format', 'string') }}",
+  "total_persons": {{ $fromAI('total_persons', 'The total number of persons', 'number', 1) }},
+  "wants_room": {{ $fromAI('wants_room', 'Boolean indicating if the guest needs accommodation/room', 'boolean', false) }},
+  "floor_preference": "{{ $fromAI('floor_preference', 'Floor preference: Ground floor or Any floor', 'string', 'Any floor') }}",
+  "has_breakfast": {{ $fromAI('has_breakfast', 'Boolean indicating if breakfast is required', 'boolean', false) }},
+  "has_lunch": {{ $fromAI('has_lunch', 'Boolean indicating if lunch is required', 'boolean', false) }},
+  "has_dinner": {{ $fromAI('has_dinner', 'Boolean indicating if dinner is required', 'boolean', false) }},
+  "dietary_preference": "{{ $fromAI('dietary_preference', 'Dietary preference: Regular or Jain', 'string', 'Regular') }}"
+}
+`;
+        console.log("Updated save_booking tool parameters with $fromAI.");
     }
 });
 
 // Create the complete workflow structure expected by n8n CLI import
+const codeNode = {
+    "parameters": {
+        "jsCode": `const map = {
+    'શૂન્ય': '0', 'ઝીરો': '0', '૦': '0',
+    'એક': '1', '૧': '1',
+    'બે': '2', '૨': '2',
+    'ત્રણ': '3', '૩': '3',
+    'ચાર': '4', '૪': '4',
+    'પાંચ': '5', '૫': '5',
+    'છ': '6', '૬': '6',
+    'સાત': '7', '૭': '7',
+    'આઠ': '8', '૮': '8',
+    'નવ': '9', '૯': '9'
+};
+
+for (const item of $input.all()) {
+    let text = item.json.transcript || "";
+    let normalized = text.toLowerCase();
+    for (const [word, digit] of Object.entries(map)) {
+        normalized = normalized.split(word).join(digit);
+    }
+    // Remove spaces between numbers
+    normalized = normalized.replace(/(\\d)\\s+(?=\\d)/g, '$1');
+    item.json.transcript = normalized;
+}
+return $input.all();`
+    },
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+        100,
+        16
+    ],
+    "id": "e9b25123-5e92-411a-a28c-7f5b3a241cb1",
+    "name": "Normalize Gujarati Digits"
+};
+data.nodes.push(codeNode);
+
+if (data.connections['Speech to text'] && data.connections['Speech to text'].main) {
+    data.connections['Speech to text'].main = [
+        [
+            {
+                "node": "Normalize Gujarati Digits",
+                "type": "main",
+                "index": 0
+            }
+        ]
+    ];
+}
+data.connections['Normalize Gujarati Digits'] = {
+    "main": [
+        [
+            {
+                "node": "AI Agent",
+                "type": "main",
+                "index": 0
+            }
+        ]
+    ]
+};
+
 const workflow = {
     id: "kJ6bUz1qrcf2sMO2",
     name: "Voice Agent",

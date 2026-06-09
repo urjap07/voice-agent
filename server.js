@@ -133,6 +133,17 @@ app.post('/api/verify-phone', async (req, res) => {
 
         const user = rows[0];
 
+        if (req.body.sessionId) {
+            console.log(`Caching verified user details for session: ${req.body.sessionId}`);
+            verifiedSessions.set(req.body.sessionId, {
+                verified: true,
+                user_id: user.user_id,
+                phone: user.phone,
+                name: user.name,
+                centre_name: user.centre_name
+            });
+        }
+
         console.log('User Found:', {
             user_id: user.user_id,
             phone: user.phone,
@@ -156,6 +167,26 @@ app.post('/api/verify-phone', async (req, res) => {
             error: err.message
         });
     }
+});
+
+// ── GET VOICE SESSION STATUS (FOR UI LIVE UPDATE) ─────────────────────────────
+app.get('/api/voice-session-status', (req, res) => {
+    const { sessionId } = req.query;
+    if (!sessionId) {
+        return res.status(400).json({ error: 'sessionId is required' });
+    }
+    if (verifiedSessions.has(sessionId)) {
+        return res.json(verifiedSessions.get(sessionId));
+    }
+
+    // Try to get verified user details from n8n SQLite database
+    const dbVerified = getVerifiedUserFromSession(sessionId);
+    if (dbVerified) {
+        verifiedSessions.set(sessionId, dbVerified);
+        return res.json(dbVerified);
+    }
+
+    return res.json({ verified: false });
 });
 
 // ── API SAVE BOOKING (FOR N8N CUSTOM TOOL) ───────────────────────────────────
@@ -255,6 +286,88 @@ async function getWelcomeAudio() {
     return cachedWelcomeAudio;
 }
 
+function normalizeGujaratiDigits(text) {
+    if (!text) return '';
+    let normalized = text.toLowerCase();
+    
+    // Replace Gujarati word digits with English digit chars
+    const map = {
+        'શૂન્ય': '0', 'ઝીરો': '0',
+        'એક': '1',
+        'બે': '2',
+        'ત્રણ': '3',
+        'ચાર': '4',
+        'પાંચ': '5',
+        'છ': '6',
+        'સાત': '7',
+        'આઠ': '8',
+        'નવ': '9'
+    };
+    
+    for (const [word, digit] of Object.entries(map)) {
+        normalized = normalized.split(word).join(digit);
+    }
+    
+    // Also replace native Gujarati digits (૦-૯)
+    const nativeMap = {
+        '૦': '0', '૧': '1', '૨': '2', '૩': '3', '૪': '4',
+        '૫': '5', '૬': '6', '૭': '7', '૮': '8', '૯': '9'
+    };
+    for (const [char, digit] of Object.entries(nativeMap)) {
+        normalized = normalized.split(char).join(digit);
+    }
+    
+    return normalized;
+}
+
+function extractPhoneNumber(text) {
+    if (!text) return null;
+    const normalized = normalizeGujaratiDigits(text);
+    const digits = normalized.replace(/\D/g, '');
+    const cleaned = digits.replace(/^91/, '').slice(-10);
+    if (cleaned.length === 10) {
+        return cleaned;
+    }
+    return null;
+}
+
+function isFillerOrSilence(text) {
+    if (!text) return true;
+    const clean = text.trim().toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g,"");
+    const fillers = ['okay', 'ok', 'so', 'yes', 'yeah', 'hallo', 'hello', 'હા', 'હાજી', 'ઓકે', 'સારું', 'só', 'right', 'correct', 'what', 'uh', 'um', 'ah', 'like', 'know'];
+    return clean.length === 0 || fillers.includes(clean);
+}
+
+async function transcribeAudio(fileBuffer) {
+    try {
+        console.log('[Sarvam STT] Transcribing user audio on server...');
+        const formData = new FormData();
+        formData.append('file', fileBuffer, {
+            filename: 'voice_booking.webm',
+            contentType: 'audio/webm'
+        });
+        formData.append('model', 'saaras:v3');
+        formData.append('language_code', 'gu-IN');
+
+        const response = await axios.post('https://api.sarvam.ai/speech-to-text', formData, {
+            headers: {
+                'api-subscription-key': process.env.SARVAM_API_KEY,
+                ...formData.getHeaders()
+            }
+        });
+
+        if (response.data && response.data.transcript) {
+            const transcriptText = response.data.transcript.trim();
+            console.log(`[Sarvam STT] Transcript: "${transcriptText}"`);
+            return transcriptText;
+        }
+        return '';
+    } catch (err) {
+        console.error('[Sarvam STT Error]:', err.response ? err.response.data : err.message);
+        return '';
+    }
+}
+
 // Pre-cache welcome audio on server startup
 getWelcomeAudio().catch(err => console.error('[Welcome Cache Error] Failed to pre-cache welcome audio:', err));
 
@@ -298,10 +411,6 @@ app.get('/api/voice-welcome', async (req, res) => {
 // ── VOICE BOOKING PROXY (Sarvam → n8n → Sarvam) ──────────────────────────────
 // ── VOICE BOOKING PROXY (Phone Verification in Server.js) ────────────────────
 app.post('/api/voice-booking', upload.single('data'), async (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ error: 'No audio file received' });
-    }
-
     const { sessionId } = req.query;
 
     if (!sessionId) {
@@ -309,258 +418,166 @@ app.post('/api/voice-booking', upload.single('data'), async (req, res) => {
     }
 
     try {
+        let fileBuffer;
+        let isFromText = false;
+        let textInput = null;
 
-        // ==========================================================
-        // STEP 1: VERIFY PHONE NUMBER ON FIRST MESSAGE ONLY
-        // ==========================================================
-        if (!verifiedSessions.has(sessionId)) {
+        if (!req.file) {
+            if (req.body && req.body.text) {
+                console.log(`[Voice text fallback] Text input: "${req.body.text}"`);
+                textInput = req.body.text;
+                isFromText = true;
+            } else {
+                return res.status(400).json({ error: 'No audio file or text input received' });
+            }
+        } else {
+            fileBuffer = req.file.buffer;
+        }
 
-            console.log(`[Phone Verification] Session: ${sessionId}`);
+        let isWav = isFromText;
 
-            try {
-                const sttForm = new FormData();
+        // Check if session is already verified
+        const isAlreadyVerified = verifiedSessions.has(sessionId);
+        let phoneNum = null;
 
-                sttForm.append('file', req.file.buffer, {
-                    filename: 'audio.webm',
-                    contentType: 'audio/webm'
-                });
+        if (!isAlreadyVerified) {
+            // Get transcript/text to inspect for phone number
+            let transcript = '';
+            if (isFromText) {
+                transcript = textInput;
+            } else {
+                transcript = await transcribeAudio(fileBuffer);
+            }
 
-                const sttResponse = await axios.post(
-                    'https://api.sarvam.ai/speech-to-text',
-                    sttForm,
-                    {
-                        headers: {
-                            ...sttForm.getHeaders(),
-                            'api-subscription-key': process.env.SARVAM_API_KEY
-                        }
-                    }
-                );
+            // If empty/silent transcript or filler words, return 204 No Content
+            if (!transcript || isFillerOrSilence(transcript)) {
+                console.log(`[Silence/Filler] Silence or filler detected ("${transcript}") for session ${sessionId}. Returning 204.`);
+                return res.status(204).end();
+            }
 
-                let transcript = '';
+            // Check if there is a 10-digit phone number in the transcript/text
+            phoneNum = extractPhoneNumber(transcript);
 
-                if (Array.isArray(sttResponse.data)) {
-                    transcript = sttResponse.data?.[0]?.transcript || '';
-                } else {
-                    transcript =
-                        sttResponse.data?.transcript ||
-                        sttResponse.data?.results?.[0]?.transcript ||
-                        '';
-                }
-
-                console.log('[STT Transcript]:', transcript);
-
-                const digits = String(transcript).replace(/\D/g, '');
-
-                if (digits.length < 10) {
-
-                    const audio = await generateSarvamTts(
-                        'કૃપા કરીને આપનો નોંધાયેલ ૧૦ અંકનો મોબાઈલ નંબર જણાવો.'
-                    );
-
-                    res.set('Content-Type', 'audio/wav');
-                    return res.send(audio);
-                }
-
-                const phoneNumber = digits.slice(-10);
-
-                console.log('[Extracted Phone]:', phoneNumber);
-
+            if (phoneNum) {
+                console.log(`[Phone Recognized] Extracted phone number: ${phoneNum}`);
                 const { getPool } = require('./lib/db');
-
                 const [rows] = await getPool().query(
-                    `
-                    SELECT
-                        user_id,
-                        phone,
-                        name,
-                        centre_name
-                    FROM registered_users
-                    WHERE RIGHT(phone,10)=?
-                    LIMIT 1
-                    `,
-                    [phoneNumber]
+                    'SELECT user_id, phone, name, centre_name FROM registered_users WHERE RIGHT(phone, 10) = ? LIMIT 1',
+                    [phoneNum]
                 );
 
-                if (!rows.length) {
+                if (rows.length > 0) {
+                    const user = rows[0];
+                    console.log(`[Phone Verified] Found registered user: ${user.name}`);
+                    verifiedSessions.set(sessionId, {
+                        verified: true,
+                        user_id: user.user_id,
+                        phone: user.phone,
+                        name: user.name,
+                        centre_name: user.centre_name
+                    });
 
-                    console.log('[Verification Failed] Number not found');
-
-                    const audio = await generateSarvamTts(
-                        'માફ કરશો, આ મોબાઇલ નંબર અમારી સિસ્ટમમાં નોંધાયેલ નથી. કૃપા કરીને કેન્દ્ર સાથે સંપર્ક કરો.'
-                    );
-
+                    // Generate a clean audio representation of the digits to feed into n8n
+                    // so n8n updates its internal state correctly and returns the personalized welcome greeting.
+                    console.log(`[Phone Verified] Generating clean digits audio for n8n...`);
+                    fileBuffer = await generateSarvamTts(phoneNum, 'shruti');
+                    isWav = true; // We now have clean WAV audio
+                } else {
+                    console.log(`[Phone Unregistered] Phone ${phoneNum} is not registered.`);
+                    const errorText = "માફ કરશો, આ ફોન નંબર આપણી સિસ્ટમમાં નોંધાયેલ નથી. કૃપા કરીને કેન્દ્ર સાથે સંપર્ક કરો.";
+                    const errorAudio = await generateSarvamTts(errorText, 'shruti');
                     res.set('Content-Type', 'audio/wav');
-                    return res.send(audio);
+                    res.set('X-End-Call', 'true');
+                    return res.send(errorAudio);
                 }
-
-                const user = rows[0];
-
-                console.log('[Verification Success]', user);
-
-                verifiedSessions.set(sessionId, {
-                    verified: true,
-                    user_id: user.user_id,
-                    phone: user.phone,
-                    name: user.name,
-                    centre_name: user.centre_name
-                });
-
-                const welcomeAudio = await generateSarvamTts(
-                    `${user.name}ભાઈ અથવા બહેન, નમસ્કાર. ${user.centre_name} તરફથી આપનું સ્વાગત છે. આપ ક્યારથી ક્યાં સુધી આવવા માંગો છો?`
-                );
-
-                res.set('Content-Type', 'audio/wav');
-                return res.send(welcomeAudio);
-
-            } catch (sttErr) {
-
-                console.error('[STT Verification Error]', sttErr);
-
-                return res.status(500).json({
-                    error: 'Phone verification failed',
-                    details: sttErr.message
-                });
+            } else {
+                // If it is NOT a phone number and is not verified, but we already have text input,
+                // we should convert it to audio buffer as in the original fallback behavior.
+                if (isFromText) {
+                    fileBuffer = await generateSarvamTts(textInput, 'shruti');
+                    isWav = true;
+                }
+            }
+        } else {
+            // If already verified, and we have text input, we need to convert it to audio buffer
+            if (isFromText) {
+                fileBuffer = await generateSarvamTts(textInput, 'shruti');
+                isWav = true;
             }
         }
 
-        // ==========================================================
-        // STEP 2: ALREADY VERIFIED → FORWARD TO N8N
-        // ==========================================================
-
         const history = getTranscriptForSession(sessionId);
 
+        const filename = isWav ? 'audio.wav' : 'audio.webm';
+        const contentTypeHeader = isWav ? 'audio/wav' : 'audio/webm';
+
         const n8nForm = new FormData();
-
-        n8nForm.append(
-            'data',
-            req.file.buffer,
-            {
-                filename: 'audio.webm',
-                contentType: 'audio/webm'
-            }
-        );
-
+        n8nForm.append('data', fileBuffer, {
+            filename: filename,
+            contentType: contentTypeHeader
+        });
         n8nForm.append('history', history || '');
 
-        const n8nUrl =
-            `${process.env.N8N_WEBHOOK_URL}?sessionId=${sessionId}`;
-
-        console.log(
-            `[Verified User] Forwarding audio to n8n: ${n8nUrl}`
-        );
+        let n8nUrl = `${process.env.N8N_WEBHOOK_URL}?sessionId=${sessionId}`;
+        const sessionInfo = verifiedSessions.get(sessionId);
+        if (sessionInfo && sessionInfo.verified) {
+            n8nUrl += `&verified=true&name=${encodeURIComponent(sessionInfo.name)}&centre_name=${encodeURIComponent(sessionInfo.centre_name)}&phone=${encodeURIComponent(sessionInfo.phone)}`;
+        }
+        console.log(`Forwarding audio to n8n: ${n8nUrl}`);
 
         let n8nRes;
-
         try {
-
-            n8nRes = await axios.post(
-                n8nUrl,
-                n8nForm,
-                {
-                    headers: {
-                        ...n8nForm.getHeaders()
-                    },
-                    responseType: 'arraybuffer'
-                }
-            );
-
+            n8nRes = await axios.post(n8nUrl, n8nForm, {
+                headers: {
+                    ...n8nForm.getHeaders()
+                },
+                responseType: 'arraybuffer'
+            });
         } catch (err) {
+            const errString = err.response && err.response.data
+                ? (Buffer.isBuffer(err.response.data)
+                    ? err.response.data.toString()
+                    : JSON.stringify(err.response.data))
+                : '';
 
-            const errString =
-                err.response && err.response.data
-                    ? (
-                        Buffer.isBuffer(err.response.data)
-                            ? err.response.data.toString()
-                            : JSON.stringify(err.response.data)
-                    )
-                    : '';
-
-            const isWebhookNotRegistered =
-                (err.response && err.response.status === 404) ||
+            const isWebhookNotRegistered = (err.response && err.response.status === 404) ||
                 errString.includes('not registered') ||
                 (err.message && err.message.includes('404'));
 
-            if (
-                isWebhookNotRegistered &&
-                n8nUrl.includes('/webhook/')
-            ) {
-
-                const testUrl =
-                    n8nUrl.replace(
-                        '/webhook/',
-                        '/webhook-test/'
-                    );
-
-                console.log(
-                    `Webhook not registered. Trying: ${testUrl}`
-                );
+            if (isWebhookNotRegistered && n8nUrl.includes('/webhook/')) {
+                const testUrl = n8nUrl.replace('/webhook/', '/webhook-test/');
+                console.log(`Webhook not registered. Trying: ${testUrl}`);
 
                 const retryForm = new FormData();
+                retryForm.append('data', fileBuffer, {
+                    filename: filename,
+                    contentType: contentTypeHeader
+                });
+                retryForm.append('history', history || '');
 
-                retryForm.append(
-                    'data',
-                    req.file.buffer,
-                    {
-                        filename: 'audio.webm',
-                        contentType: 'audio/webm'
-                    }
-                );
-
-                retryForm.append(
-                    'history',
-                    history || ''
-                );
-
-                n8nRes = await axios.post(
-                    testUrl,
-                    retryForm,
-                    {
-                        headers: {
-                            ...retryForm.getHeaders()
-                        },
-                        responseType: 'arraybuffer'
-                    }
-                );
-
+                n8nRes = await axios.post(testUrl, retryForm, {
+                    headers: {
+                        ...retryForm.getHeaders()
+                    },
+                    responseType: 'arraybuffer'
+                });
             } else {
-
                 throw err;
             }
         }
 
-        const contentType =
-            n8nRes.headers['content-type'] || '';
-
+        const contentType = n8nRes.headers['content-type'] || '';
         if (contentType.includes('application/json')) {
-
-            console.error(
-                '[n8n Error]',
-                Buffer.from(n8nRes.data).toString()
-            );
-
+            console.error('[n8n Error]', Buffer.from(n8nRes.data).toString());
             res.set('Content-Type', 'application/json');
-
-            return res
-                .status(500)
-                .send(n8nRes.data);
+            return res.status(500).send(n8nRes.data);
         }
 
-        res.set(
-            'Content-Type',
-            contentType || 'audio/wav'
-        );
-
-        return res.send(
-            Buffer.from(n8nRes.data)
-        );
+        res.set('Content-Type', contentType || 'audio/wav');
+        return res.send(Buffer.from(n8nRes.data));
 
     } catch (err) {
-
-        console.error(
-            '[VOICE BOOKING ERROR]',
-            err
-        );
-
+        console.error('[VOICE BOOKING ERROR]', err);
         return res.status(500).json({
             error: 'Pipeline failed',
             message: err.message
@@ -693,13 +710,14 @@ function getTranscriptForSession(sessionId) {
 }
 
 async function extractBookingDetailsFromTranscript(transcript) {
+    const currentYear = new Date().getFullYear();
     const prompt = `Based on the conversation transcript between the Guest and the Booking Assistant, extract the guest's booking details.
 Return ONLY a JSON object. Do not include markdown formatting or backticks around the JSON.
 The JSON object must have the following fields:
 - mumukshu_name (string or null)
 - mumukshu_phone (string or null, clean 10-digit number)
-- start_date (string or null, format YYYY-MM-DD)
-- end_date (string or null, format YYYY-MM-DD)
+- start_date (string or null, format YYYY-MM-DD. Assume the current year is ${currentYear} if no year is specified)
+- end_date (string or null, format YYYY-MM-DD. Assume the current year is ${currentYear} if no year is specified)
 - total_persons (integer or null)
 - wants_room (boolean or null)
 - floor_preference (string or null)
@@ -733,6 +751,63 @@ ${transcript}`;
         console.error('OpenAI extraction failed:', err.response ? err.response.data : err.message);
         throw err;
     }
+}
+
+function getVerifiedUserFromSession(sessionId) {
+    try {
+        const { DatabaseSync } = require('node:sqlite');
+        const path = require('path');
+        const dbPath = path.join(process.env.HOME || '/Users/Urja', '.n8n', 'database.sqlite');
+        const db = new DatabaseSync(dbPath);
+
+        // Fetch recent executions to scan for the sessionId
+        const query = db.prepare("SELECT executionId, data FROM execution_data ORDER BY executionId DESC LIMIT 100");
+        const rows = query.all();
+
+        for (const row of rows) {
+            try {
+                const rawArr = JSON.parse(row.data);
+                const dataObj = deserializeN8nData(rawArr);
+
+                if (dataObj && dataObj.resultData && dataObj.resultData.runData) {
+                    const runData = dataObj.resultData.runData;
+                    if (runData['Webhook']) {
+                        const webhookItem = runData['Webhook'][0].data.main[0][0].json;
+                        const sessId = webhookItem.query ? webhookItem.query.sessionId : null;
+
+                        if (sessId === sessionId) {
+                            if (runData['verify_phone']) {
+                                const verifyData = runData['verify_phone'][0].data.ai_tool[0][0].json;
+                                let targetObj = null;
+                                if (verifyData) {
+                                    if (Array.isArray(verifyData.response) && verifyData.response[0]) {
+                                        targetObj = verifyData.response[0];
+                                    } else if (verifyData.response) {
+                                        targetObj = verifyData.response;
+                                    } else {
+                                        targetObj = verifyData;
+                                    }
+                                }
+                                if (targetObj && (targetObj.found === 'true' || targetObj.found === true || targetObj.found === 1 || targetObj.name)) {
+                                    return {
+                                        verified: true,
+                                        name: targetObj.name,
+                                        phone: targetObj.phone || targetObj.phone_number,
+                                        centre_name: targetObj.centre_name
+                                    };
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                // Ignore parsing errors
+            }
+        }
+    } catch (err) {
+        console.error('Failed to get verified user from n8n DB:', err);
+    }
+    return null;
 }
 
 app.post('/api/stop-voice-call', async (req, res) => {

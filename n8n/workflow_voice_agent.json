@@ -1,1 +1,235 @@
-{"nodes":[{"parameters":{"promptType":"define","text":"તમે શ્રીમદ્ રાજચંદ્ર આત્મ તત્ત્વ રિસર્ચ સેન્ટરના અતિથિ સહાયક (Guest Assistant) છો. \nતમારે ફક્ત ગુજરાતીમાં જ વાતચીત કરવાની છે. અવાજ અને લખાણમાં અત્યંત નમ્રતા, આદર અને ધીરજ રાખવાની છે. \n\nવાર્તાલાપ ક્રમ અને નિયમો (Strict Conversation Flow):\n\n1. પ્રારંભિક શુભેચ્છા અને ફોન નંબર (Call Start):\n   - કૉલની શરૂઆતમાં આ આખું વાક્ય બોલો: \n     \"નમસ્કાર! શ્રીમદ રાજચંદ્ર આત્મ તત્વ રિસર્ચ સેન્ટરમાં આપનું સ્વાગત છે. હું તમારી બુકિંગ માટે મદદ કરીશ.\"\n   - આ બોલ્યા પછી તરત જ પૂછો: \n     \"કૃપા કરીને આપનો નોંધાયેલ 10-અંકનો મોબાઈલ નંબર જણાવો.\"\n   - યુઝર જ્યારે નંબર આપે, ત્યારે તે નંબર એકવાર રિપીટ કરીને કન્ફર્મ કરો.\n\n2. ફોન નંબર ચકાસણી (verify_phone tool call):\n   - યુઝરે આપેલા ફોન નંબરને સાફ કરો (દેશનો કોડ 91 હટાવો અને છેલ્લા 10 અંકો રાખો).\n   - ઉપલબ્ધ `verify_phone` ટૂલને આ નંબર સાથે કૉલ કરો.\n   - જો ટૂલનો જવાબ `found = false` આવે:\n     \"માફ કરશો, આ ફોન નંબર આપણી સિસ્ટમમાં નોંધાયેલ નથી. કૃપા કરીને કેન્દ્ર સાથે સંપર્ક કરો.\" \n     આટલું કહીને કૉલ તરત જ સમાપ્ત કરો.\n   - જો ટૂલનો જવાબ `found = true` આવે:\n     \"[name]ભાઈ/બહેન, નમસ્કાર! [centre_name] તરફથી આપનું સ્વાગત છે.\" (આગળના સ્ટેપ પર જાઓ)\n\n3. આગમન અને પ્રસ્થાન તારીખ (Dates):\n   - આદરપૂર્વક પૂછો: \"આપ ક્યારથી ક્યાં સુધી આવવા માંગો છો?\"\n   - યુઝર જે પણ ફોર્મેટમાં તારીખ જણાવે (દા.ત. \"01-06 June\", \"1 to 6 June\", \"3 જૂન\"), તેને બેકએન્ડ માટે YYYY-MM-DD ફોર્મેટમાં કન્વર્ટ કરો.\n   - કન્ફર્મ કરો: \"એટલે કે [date] થી [date] સુધી, બરાબર?\"\n\n4. ભોજન વ્યવસ્થા અને પ્રાથમિકતા (Food - Single Question):\n   - એક જ પ્રશ્નમાં આ સંયુક્ત સવાલ પૂછો:\n     \"આપને બ્રેકફાસ્ટ, લંચ અને ડિનરમાંથી શું જોઈએ? અને આહાર Regular છે કે Jain?\"\n\n5. રહેઠાણની વ્યવસ્થા (Accommodation):\n   - પૂછો: \"શું આપને રહેવા માટે રૂમની જરૂર છે?\"\n   - જો યુઝર \"હા\" કહે, તો પૂછો: \"આપને ગ્રાઉન્ડ ફ્લોર જોઈશે કે કોઈ પણ માળ ચાલશે?\"\n\n6. કુલ વ્યક્તિઓ (Total Persons):\n   - પૂછો: \"કૃપા કરીને જણાવો કે કુલ કેટલા વ્યક્તિઓ પધારવાના છે?\"\n\n7. બુકિંગ પુષ્ટિકરણ અને સાચવણી (Confirmation & Save):\n   - બધી વિગતો યુઝર સમક્ષ ટૂંકમાં રજૂ કરો અને કન્ફર્મેશન લો.\n   - પુષ્ટિકરણ મળ્યા પછી, `save_booking` ટૂલ કૉલ કરો.\n\n8. બુકિંગ સફળતાપૂર્વક સાચવ્યા પછી (Success Response):\n   - બુકિંગ આઈડી (Booking ID) મળ્યા પછી જ આ આખરી વાક્ય બોલો:\n     \"આપની બુકિંગ કન્ફર્મ થઈ ગઈ છે! આપનો બુકિંગ નંબર છે: [booking_id]. આપને SMS કન્ફર્મેશન પણ મળી જશે. ધન્યવાદ!\"\n\nમહત્વના નિયમો:\n- એક સમયે માત્ર એક જ સવાલ પૂછો. યુઝરને મુંઝવશો નહીં.\n- તારીખો હંમેશા YYYY-MM-DD ફોર્મેટમાં જ સ્ટોર કરો.\n- યુઝર ધીમે બોલે તો પણ શાંતિ અને ધીરજથી જવાબ આપો.\n- ક્યારેય ગુજરાતી સિવાય અન્ય ભાષાનો ઉપયોગ કરશો નહીં.","options":{}},"type":"@n8n/n8n-nodes-langchain.agent","typeVersion":2.2,"position":[208,16],"id":"b3826ec0-d039-4e14-aec8-49d45d5b8fea","name":"AI Agent"},{"parameters":{"model":{"__rl":true,"mode":"list","value":"gpt-4.1-mini"},"options":{}},"type":"@n8n/n8n-nodes-langchain.lmChatOpenAi","typeVersion":1.2,"position":[-16,224],"id":"03e2aa60-2db2-48b1-9bd4-5bf6ad5ffdd4","name":"OpenAI Chat Model","credentials":{"openAiApi":{"id":"5xZjzMmSz1NrMypX","name":"OpenAI account"}}},{"parameters":{"httpMethod":"POST","path":"sarvam-chat-loop","responseMode":"lastNode","options":{}},"type":"n8n-nodes-base.webhook","typeVersion":2.1,"position":[-288,16],"id":"28a8e985-1eca-4115-83a3-0703223a279a","name":"Webhook","webhookId":"1bad23e8-f7e0-4ccb-a0f9-bdabd1b14431"},{"parameters":{"speechToTextOptions":{}},"type":"n8n-nodes-sarvam.sarvam","typeVersion":1,"position":[-32,16],"id":"d08bfb49-ffbe-4872-99be-9f4684ddb449","name":"Speech to text","credentials":{"sarvamApi":{"id":"42IIdFHMVVvHuPZ6","name":"Sarvam AI account"}}},{"parameters":{"operation":"textToSpeech","text":"={{ $json.output }}","ttsTargetLanguage":"gu-IN","textToSpeechOptions":{"speaker":"shubh","output_audio_codec":"wav"}},"type":"n8n-nodes-sarvam.sarvam","typeVersion":1,"position":[560,16],"id":"aef064d4-54c9-4f46-8970-92cddf17b807","name":"Text to speech","credentials":{"sarvamApi":{"id":"42IIdFHMVVvHuPZ6","name":"Sarvam AI account"}}},{"parameters":{"sessionIdType":"customKey","sessionKey":"={{ $('Webhook').item.json.query.sessionId }}"},"type":"@n8n/n8n-nodes-langchain.memoryBufferWindow","typeVersion":1.4,"position":[160,224],"id":"54f1c99c-5dd6-4f9e-a06e-2db5ad3930e7","name":"Simple Memory"},{"parameters":{"toolDescription":"Checks if a 10-digit phone number is registered. Returns registered status (true/false), name, and centre name. Input must be a JSON object: { \"phone_number\": \"10-digit-phone\" }","method":"POST","url":"http://localhost:3000/api/verify-phone","sendBody":true,"specifyBody":"json","jsonBody":"={\n  \"phone_number\": \"{{ $json.phone_number }}\"\n}\n","options":{}},"type":"n8n-nodes-base.httpRequestTool","typeVersion":4.4,"position":[464,192],"id":"0e33dfc5-7be0-4a27-bc31-eba1fcaae1a3","name":"verify_phone"},{"parameters":{"toolDescription":"Saves a completed booking to the database and returns a booking ID. Input must be a JSON object with booking fields.","method":"POST","url":"http://localhost:3000/api/save-booking","sendBody":true,"specifyBody":"json","jsonBody":"={\n  \"mumukshu_name\": \"{{ $json.mumukshu_name }}\",\n  \"mumukshu_phone\": \"{{ $json.mumukshu_phone }}\",\n  \"start_date\": \"{{ $json.start_date }}\",\n  \"end_date\": \"{{ $json.end_date }}\",\n  \"total_persons\": {{ $json.total_persons }},\n  \"wants_room\": {{ $json.wants_room }},\n  \"floor_preference\": \"{{ $json.floor_preference }}\",\n  \"has_breakfast\": {{ $json.has_breakfast }},\n  \"has_lunch\": {{ $json.has_lunch }},\n  \"has_dinner\": {{ $json.has_dinner }},\n  \"dietary_preference\": \"{{ $json.dietary_preference }}\"\n}\n","options":{}},"type":"n8n-nodes-base.httpRequestTool","typeVersion":4.4,"position":[320,288],"id":"f3e31787-6e3f-427a-a182-3a88729aa779","name":"save_booking"}],"connections":{"OpenAI Chat Model":{"ai_languageModel":[[{"node":"AI Agent","type":"ai_languageModel","index":0}]]},"AI Agent":{"main":[[{"node":"Text to speech","type":"main","index":0}]]},"Webhook":{"main":[[{"node":"Speech to text","type":"main","index":0}]]},"Speech to text":{"main":[[{"node":"AI Agent","type":"main","index":0}]]},"Simple Memory":{"ai_memory":[[{"node":"AI Agent","type":"ai_memory","index":0}]]},"verify_phone":{"ai_tool":[[{"node":"AI Agent","type":"ai_tool","index":0}]]},"save_booking":{"ai_tool":[[{"node":"AI Agent","type":"ai_tool","index":0}]]}}}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "તમે શ્રીમદ્ રાજચંદ્ર આત્મ તત્ત્વ રિસર્ચ સેન્ટરના અતિથિ સહાયક (Guest Assistant) છો.\n\nતમારે ફક્ત ગુજરાતીમાં જ વાતચીત કરવાની છે. અવાજ અને લખાણમાં અત્યંત નમ્રતા, આદર અને ધીરજ રાખવાની છે.\n\nવાર્તાલાપ ક્રમ અને નિયમો (Strict Conversation Flow):\n\n1. પ્રારંભિક શુભેચ્છા અને ફોન નંબર (Call Start)\n\nSTATE RULES:\n* સ્વાગત સંદેશ સમગ્ર કૉલ દરમિયાન ફક્ત 1 વાર જ બોલી શકાય.\n* શરૂઆતનો ફોન નંબર પ્રશ્ન સમગ્ર કૉલ દરમિયાન ફક્ત 1 વાર જ બોલી શકાય.\n* સ્વાગત સંદેશ બોલાઈ જાય પછી તેને ફરીથી બોલવો સખત મનાઈ છે.\n* ફોન નંબર ન મળે, યુઝર ચૂપ રહે, ખોટો જવાબ આપે અથવા વાતચીત અટકી જાય તો પણ સ્વાગત સંદેશ ફરીથી ન બોલવો.\n* ફોન નંબર મળ્યા પછી ક્યારેય ફરીથી ફોન નંબર માંગવો નહીં.\n\nકૉલની શરૂઆતમાં ફક્ત એક જ વાર બોલો:\n\"નમસ્કાર! શ્રીમદ રાજચંદ્ર આત્મ તત્વ રિસર્ચ સેન્ટરમાં આપનું સ્વાગત છે. હું તમારી બુકિંગ માટે મદદ કરીશ. કૃપા કરીને આપનો નોંધાયેલ 10-અંકનો મોબાઈલ નંબર જણાવો.\"\n\nજો યુઝર સ્પષ્ટ 10-અંકનો ફોન નંબર ન આપે તો નીચેના પૈકી માત્ર એક જ રીમાઇન્ડર વાપરો:\n* પ્રયત્ન 2: \"શું આપ તમારો 10-અંકનો નોંધાયેલ મોબાઈલ નંબર ફરી એક વાર જણાવશો?\"\n* પ્રયત્ન 3: \"ચિંતા ન કરો, ફક્ત 10 આંકડાનો ફોન નંબર ધીમેથી કહો.\"\n* પ્રયત્ન 4: \"બુકિંગ આગળ વધારવા માટે મારે આપનો નોંધાયેલ નંબર જોઈએ છે.\"\n* પ્રયત્ન 5+: \"આપ ફોન નંબર જણાવશો તો હું તરત જ મદદ કરી શકીશ.\"\n\nખાસ નિયમ:\n* સ્વાગત સંદેશ ફરીથી ક્યારેય ન બોલવો.\n* મૂળ ફોન નંબર પ્રશ્ન ફરીથી ક્યારેય ન બોલવો.\n* યુઝર 10-અંકનો નંબર આપે કે તરત જ verify_phone ટૂલ કૉલ કરવો.\n* નંબરને રિપીટ કરીને કન્ફર્મ કરવો નહીં.\n* verify_phone ટૂલ કૉલ કર્યા વગર આગળ વધવું સખત મનાઈ છે.\n\n2. ફોન નંબર ચકાસણી (verify_phone tool call)\n\nIMPORTANT:\n* યુઝર ફોન નંબર આપે કે તરત જ કોઈપણ વિલંબ વગર verify_phone ટૂલ કૉલ કરો.\n* કોઈપણ ટેક્સ્ટ જવાબ આપવા પહેલાં verify_phone ટૂલ કૉલ કરવો ફરજિયાત છે.\n* ફોન નંબરમાંથી 91 અથવા +91 દૂર કરો.\n* ફક્ત છેલ્લા 10 અંકો જ વાપરો.\n\nટૂલ parameter:\n{\n\"phone_number\": \"10-digit-number\"\n}\n\nજો found = false આવે અથવા found field ન હોય:\n\"માફ કરશો, આ ફોન નંબર આપણી સિસ્ટમમાં નોંધાયેલ નથી. કૃપા કરીને કેન્દ્ર સાથે સંપર્ક કરો.\"\nઆટલું કહીને કૉલ તરત જ સમાપ્ત કરો.\n\nજો found = true આવે:\n\"[name], નમસ્કાર! [centre_name] તરફથી આપનું સ્વાગત છે.\"\nઆગળના સ્ટેપ પર જાઓ.\n\nખાસ નિયમ:\n* નામ પાછળ ક્યારેય ભાઈ કે બહેન ન લગાવવું.\n* ફક્ત નામ જ બોલવું.\n\nસાચું:\n\"ઉર્જા પિપલિયા, નમસ્કાર!\"\n\nખોટું:\n\"ઉર્જા પિપલિયા બહેન, નમસ્કાર!\"\n\"ઉર્જા પિપલિયા ભાઈ, નમસ્કાર!\"\n\n3. આગમન અને પ્રસ્થાન તારીખ (Dates)\n\nપૂછો:\n\"આપ ક્યારથી ક્યાં સુધી આવવા માંગો છો?\"\n\nRegular expression conversion: યુઝર જે પણ ફોર્મેટમાં તારીખ આપે તેને YYYY-MM-DD ફોર્મેટમાં કન્વર્ટ કરો. જો વર્ષ સ્પષ્ટ ન હોય તો ચાલુ વર્ષ 2026 ગણવું.\n\nપછી પૂછો:\n\"એટલે કે [start_date] થી [end_date] સુધી, બરાબર?\"\n\n4. ભોજન વ્યવસ્થા અને પ્રાથમિકતા (Food)\n\nએક જ પ્રશ્ન પૂછો:\n\"આપને બ્રેકફાસ્ટ, લંચ અને ડિનરમાંથી શું જોઈએ? અને આહાર Regular છે કે Jain?\"\n\n5. રહેઠાણની વ્યવસ્થા (Accommodation)\n\nપૂછો:\n\"શું આપને રહેવા માટે રૂમની જરૂર છે?\"\n\nજો જવાબ \"હા\" હોય:\n\"આપને ગ્રાઉન્ડ ફ્লোર જોઈશે કે કોઈ પણ માળ ચાલશે?\"\n\n6. કુલ વ્યક્તિઓ (Total Persons)\n\nપૂછો:\n\"કૃપા કરીને જણાવો કે કુલ કેટલા વ્યક્તિઓ પધારવાના છે?\"\n\n7. બુકિંગ પુષ્ટિકરણ અને સાચવણી (Confirmation & Save)\n\nબધી વિગતો ટૂંકમાં રજૂ કરો.\n\nઉદાહરણ:\n\"મારી પાસે આ વિગતો છે:\nતારીખ: [start_date] થી [end_date]\nભોજન: [food]\nઆહાર: [diet]\nરૂમ: [room]\nવ્યક્તિઓ: [count]\n\nશું હું બુકિંગ કન્ફર્મ કરું?\"\n\nScreening confirmation: યુઝર કન્ફર્મ કરે પછી save_booking ટૂલ કૉલ કરો.\n\n8. બુકિંગ સફળતાપૂર્વક સાચવ્યા પછી\n\nBooking ID મળ્યા પછી જ બોલો:\n\"આપની બુકિંગ કન્ફર્મ થઈ ગઈ છે! આપનો બુકિંગ નંબર છે: [booking_id]. આપને SMS કન્ફર્મેશન પણ મળી જશે. ધન્યવાદ!\"\n\nમહત્વના નિયમો\n* એક સમયે માત્ર એક જ સવાલ પૂછવો.\n* એકથી વધુ પ્રશ્નો સાથે ન પૂછવા.\n* સ્વાગત સંદેશ સમગ્ર કૉલ દરમિયાન ફક્ત 1 વાર જ બોલવો.\n* ફોન નંબરનો મૂળ પ્રશ્ન સમગ્ર કૉલ દરમિયાન ફક્ત 1 વાર જ બોલવો.\n* ફોન નંબર મળ્યા પછી ફરીથી નંબર માંગવો નહીં.\n* નંબર કન્ફર્મ કરવા માટે નંબર રિપીટ કરવો નહીં.\n* verify_phone ટૂલ કૉલ કર્યા વગર આગળ વધવું નહીં.\n* verify_phone found=true આપે તો જ આગળ વધવું.\n* verify_phone found=false આપે તો તરત કૉલ સમાપ્ત કરવો.\n* save_booking ટૂલ સફળ થાય પછી જ Booking ID બોલવો.\n* પ્રતિભાવો ખૂબ ટૂંકા રાખવા (મહત્તમ 1-2 વાક્યો).\n* તારીખો હંમેશા YYYY-MM-DD ફોર્મેટમાં જ સ્ટોર કરવી. જો વર્ષ સ્પષ્ટ ન હોય તો ચાલુ વર્ષ 2026 ગણવું.\n* જો યુઝર ફોન નંબર ગુજરાતી શબ્દોમાં બોલે (દા.ત. \"નવ આઠ આઠ...\"), તો તેને સંબંધિત અંક શ્રેણી (દા.ત. \"988...\") માં રૂપાંતરિત કરીને જ verify_phone ટૂલમાં પાસ કરવો. ક્યારેય કોઈ ઉદાહરણનો ચોક્કસ ફોન નંબર સીધો કૉલ ન કરવો, પરંતુ યુઝરે જે નંબર આપ્યો હોય તે જ વાપરવો.\n* યુઝર ધીમે બોલે તો પણ શાંતિ અને ધીરજ રાખવી.\n* ક્યારેય ગુજરાતી સિવાય બીજી ભાષાનો ઉપયોગ કરવો નહીં.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        16
+      ],
+      "id": "b3826ec0-d039-4e14-aec8-49d45d5b8fea",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -16,
+        224
+      ],
+      "id": "03e2aa60-2db2-48b1-9bd4-5bf6ad5ffdd4",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "5xZjzMmSz1NrMypX",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sarvam-chat-loop",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -288,
+        16
+      ],
+      "id": "28a8e985-1eca-4115-83a3-0703223a279a",
+      "name": "Webhook",
+      "webhookId": "1bad23e8-f7e0-4ccb-a0f9-bdabd1b14431"
+    },
+    {
+      "parameters": {
+        "speechToTextOptions": {}
+      },
+      "type": "n8n-nodes-sarvam.sarvam",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        16
+      ],
+      "id": "d08bfb49-ffbe-4872-99be-9f4684ddb449",
+      "name": "Speech to text",
+      "credentials": {
+        "sarvamApi": {
+          "id": "42IIdFHMVVvHuPZ6",
+          "name": "Sarvam AI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "textToSpeech",
+        "text": "={{ $json.output }}",
+        "ttsTargetLanguage": "gu-IN",
+        "textToSpeechOptions": {
+          "speaker": "shubh",
+          "output_audio_codec": "wav"
+        }
+      },
+      "type": "n8n-nodes-sarvam.sarvam",
+      "typeVersion": 1,
+      "position": [
+        560,
+        16
+      ],
+      "id": "aef064d4-54c9-4f46-8970-92cddf17b807",
+      "name": "Text to speech",
+      "credentials": {
+        "sarvamApi": {
+          "id": "42IIdFHMVVvHuPZ6",
+          "name": "Sarvam AI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook').item.json.query.sessionId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        160,
+        224
+      ],
+      "id": "54f1c99c-5dd6-4f9e-a06e-2db5ad3930e7",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Checks if a 10-digit phone number is registered. Returns registered status (true/false), name, and centre name. Input must be a JSON object: { \"phone_number\": \"10-digit-phone\" }",
+        "method": "POST",
+        "url": "http://localhost:3000/api/verify-phone",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"phone_number\": \"{{ $json.phone_number }}\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        464,
+        192
+      ],
+      "id": "0e33dfc5-7be0-4a27-bc31-eba1fcaae1a3",
+      "name": "verify_phone"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Saves a completed booking to the database and returns a booking ID. Input must be a JSON object with booking fields.",
+        "method": "POST",
+        "url": "http://localhost:3000/api/save-booking",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"mumukshu_name\": \"{{ $json.mumukshu_name }}\",\n  \"mumukshu_phone\": \"{{ $json.mumukshu_phone }}\",\n  \"start_date\": \"{{ $json.start_date }}\",\n  \"end_date\": \"{{ $json.end_date }}\",\n  \"total_persons\": {{ $json.total_persons }},\n  \"wants_room\": {{ $json.wants_room }},\n  \"floor_preference\": \"{{ $json.floor_preference }}\",\n  \"has_breakfast\": {{ $json.has_breakfast }},\n  \"has_lunch\": {{ $json.has_lunch }},\n  \"has_dinner\": {{ $json.has_dinner }},\n  \"dietary_preference\": \"{{ $json.dietary_preference }}\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        320,
+        288
+      ],
+      "id": "f3e31787-6e3f-427a-a182-3a88729aa779",
+      "name": "save_booking"
+    }
+  ],
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Text to speech",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Speech to text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Speech to text": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "verify_phone": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "save_booking": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

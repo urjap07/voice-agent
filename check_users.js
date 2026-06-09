@@ -1,11 +1,12 @@
-require('dotenv').config();
-const { getPool } = require('./lib/db');
+const { DatabaseSync } = require('node:sqlite');
+const path = require('path');
 
 async function check() {
     try {
-        const pool = getPool();
-        const [rows] = await pool.query('DESCRIBE bookings');
-        console.log('Bookings Columns:', rows);
+        const dbPath = path.join(process.env.HOME || '/Users/Urja', '.n8n', 'database.sqlite');
+        const db = new DatabaseSync(dbPath);
+        const query = db.prepare("SELECT id, name, active FROM workflow_entity");
+        console.log('Workflows:', query.all());
         process.exit(0);
     } catch (err) {
         console.error('Error:', err);
@@ -13,3 +14,5 @@ async function check() {
     }
 }
 check();
+
+

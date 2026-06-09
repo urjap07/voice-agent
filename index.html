@@ -715,6 +715,16 @@
                             <div class="bar"></div>
                         </div>
                     </div>
+
+                    <!-- Voice Text Input Box (Fallback/Hybrid) -->
+                    <div id="voice-text-input-container" style="display: none; margin-top: 15px; width: 100%;">
+                        <div class="text-input-group">
+                            <input type="text" id="voice-text-input" class="chat-input"
+                                placeholder="અહીં તમારો જવાબ ટાઈપ કરો...">
+                            <button id="voice-text-submit" class="send-btn">➤</button>
+                        </div>
+                    </div>
+
                     <p id="save-status" aria-live="polite"></p>
                 </div>
 
@@ -793,6 +803,7 @@
         let activeAudioContext = null;
         let vadAudioContext = null;
         let vadActive = false;
+        let shouldEndCallAfterPlayback = false;
 
         const mainBtn = document.getElementById('vapi-btn');
         const widgetBtn = document.getElementById('bottom-phone-widget');
@@ -877,12 +888,54 @@
             isCallActive = true;
             currentSessionId = 'voice_' + Date.now();
             lastKnownBookingId = null;
+            isSessionVerified = false;
+
+            // Initialize lastKnownBookingId to the current latest booking ID in the DB
+            try {
+                const res = await fetch('/api/bookings');
+                if (res.ok) {
+                    const bookings = await res.json();
+                    if (bookings && bookings.length > 0) {
+                        lastKnownBookingId = bookings[0].booking_id;
+                    }
+                }
+            } catch (e) {
+                lastKnownBookingId = null;
+            }
+
             disableOtherUIElements(true);
             setCallUIState();
             startVoiceLivePolling();
             setSaveStatus('કનેક્ટ થઈ રહ્યું છે...');
             soundWave.classList.add('connecting');
             soundWave.classList.add('active');
+
+            // Reset the Live Preview section
+            document.getElementById('rec-name').textContent = '-';
+            document.getElementById('rec-phone').textContent = '-';
+            document.getElementById('rec-start').textContent = '-';
+            document.getElementById('rec-end').textContent = '-';
+            document.getElementById('rec-meals').textContent = '-';
+            document.getElementById('rec-diet').textContent = '-';
+
+            const badge = document.getElementById('receipt-badge');
+            badge.textContent = 'અપૂર્ણ';
+            badge.className = 'receipt-badge';
+
+            const statusText = document.getElementById('receipt-status-text');
+            statusText.textContent = 'વાતચીત શરૂ કરીને વિગતો આપો...';
+            statusText.removeAttribute('style');
+
+            // Show voice text input box
+            const inputContainer = document.getElementById('voice-text-input-container');
+            const inputField = document.getElementById('voice-text-input');
+            const submitBtn = document.getElementById('voice-text-submit');
+            if (inputContainer) inputContainer.style.display = 'block';
+            if (inputField) {
+                inputField.value = '';
+                inputField.disabled = false;
+            }
+            if (submitBtn) submitBtn.disabled = false;
 
             try {
                 const welcomeUrl = `/api/voice-welcome?sessionId=${currentSessionId}`;
@@ -910,6 +963,10 @@
             stopActivePlayback();
             stopSilenceDetection();
             stopVoiceLivePolling();
+
+            // Hide voice text input box
+            const inputContainer = document.getElementById('voice-text-input-container');
+            if (inputContainer) inputContainer.style.display = 'none';
 
             if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                 try { mediaRecorder.stop(); } catch (e) { }
@@ -959,18 +1016,55 @@
                 try {
                     const audioBlob = await recordUserAudio();
                     if (!isCallActive) return;
-                    if (!audioBlob) continue;
 
-                    setProcessingUI();
-                    const responseArrayBuffer = await sendAudioToServer(audioBlob);
+                    let responseArrayBuffer;
+                    if (voiceTextInputPending) {
+                        const textToSend = voiceTextInputPending;
+                        voiceTextInputPending = null;
+                        setProcessingUI();
+                        responseArrayBuffer = await sendTextToServer(textToSend);
+                    } else {
+                        if (!audioBlob) continue;
+                        setProcessingUI();
+                        responseArrayBuffer = await sendAudioToServer(audioBlob);
+                    }
+
+                    // Re-enable input fields once server finishes processing
+                    const inputField = document.getElementById('voice-text-input');
+                    const submitBtn = document.getElementById('voice-text-submit');
+                    if (inputField) {
+                        inputField.disabled = false;
+                        setTimeout(() => inputField.focus(), 50);
+                    }
+                    if (submitBtn) submitBtn.disabled = false;
+
                     if (!isCallActive) return;
+
+                    // If response is null (204 No Content), skip playback and continue loop
+                    if (!responseArrayBuffer || responseArrayBuffer.byteLength === 0) {
+                        setUserListeningUI();
+                        continue;
+                    }
 
                     setAgentSpeakingUI();
                     await playAudioBuffer(responseArrayBuffer);
                     if (!isCallActive) return;
+
+                    if (shouldEndCallAfterPlayback) {
+                        shouldEndCallAfterPlayback = false;
+                        endVoiceCall();
+                        return;
+                    }
                 } catch (err) {
                     console.error('Conversation loop error:', err);
                     setSaveStatus(`કનેક્શનમાં ખામી આવી છે: ${err.message}`, 'err');
+
+                    // Re-enable text inputs on error
+                    const inputField = document.getElementById('voice-text-input');
+                    const submitBtn = document.getElementById('voice-text-submit');
+                    if (inputField) inputField.disabled = false;
+                    if (submitBtn) submitBtn.disabled = false;
+
                     await new Promise(resolve => setTimeout(resolve, 2000));
                 }
             }
@@ -980,6 +1074,11 @@
             return new Promise(async (resolve, reject) => {
                 let stream;
                 try {
+                    if (voiceTextInputPending) {
+                        resolve(null);
+                        return;
+                    }
+
                     setUserListeningUI();
                     audioChunks = [];
 
@@ -991,6 +1090,12 @@
                             channelCount: 1
                         }
                     });
+
+                    if (voiceTextInputPending) {
+                        stream.getTracks().forEach(track => track.stop());
+                        resolve(null);
+                        return;
+                    }
 
                     if (!isCallActive) {
                         stream.getTracks().forEach(track => track.stop());
@@ -1091,7 +1196,7 @@
                             silenceStart = now;
                         } else {
                             const silenceDuration = now - silenceStart;
-                            const maxSilence = hasSpoken ? 1800 : 3500;
+                            const maxSilence = hasSpoken ? 1200 : 2500;
                             if (silenceDuration > maxSilence) {
                                 cleanupAndStop();
                                 return;
@@ -1142,7 +1247,36 @@
                 body: formData
             });
 
+            if (response.status === 204) {
+                return null;
+            }
+
             if (!response.ok) throw new Error(`Server returned status: ${response.status}`);
+
+            if (response.headers.get('X-End-Call') === 'true') {
+                shouldEndCallAfterPlayback = true;
+            }
+
+            loadRecentBookings();
+            return await response.arrayBuffer();
+        }
+
+        async function sendTextToServer(text) {
+            const response = await fetch(`/api/voice-booking?sessionId=${currentSessionId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text })
+            });
+
+            if (response.status === 204) {
+                return null;
+            }
+
+            if (!response.ok) throw new Error(`Server returned status: ${response.status}`);
+
+            if (response.headers.get('X-End-Call') === 'true') {
+                shouldEndCallAfterPlayback = true;
+            }
 
             loadRecentBookings();
             return await response.arrayBuffer();
@@ -1152,6 +1286,7 @@
             return new Promise(async (resolve, reject) => {
                 try {
                     stopActivePlayback();
+                    activePlaybackResolve = resolve;
 
                     activeAudioContext = new (window.AudioContext || window.webkitAudioContext)();
                     const audioBuffer = await activeAudioContext.decodeAudioData(arrayBuffer);
@@ -1191,7 +1326,10 @@
                     activeAudioSource.onended = () => {
                         isPlayingAudio = false;
                         stopActivePlayback();
-                        resolve();
+                        if (activePlaybackResolve) {
+                            activePlaybackResolve();
+                            activePlaybackResolve = null;
+                        }
                     };
 
                     activeAudioSource.start(0);
@@ -1215,6 +1353,10 @@
                 } catch (e) { }
                 activeAudioContext = null;
             }
+            if (activePlaybackResolve) {
+                activePlaybackResolve();
+                activePlaybackResolve = null;
+            }
         }
 
         // ==========================================
@@ -1222,12 +1364,49 @@
         // ==========================================
         let voicePollingInterval = null;
         let lastKnownBookingId = null;
+        let isSessionVerified = false;
+        let voiceTextInputPending = null;
+        let activePlaybackResolve = null;
 
         function startVoiceLivePolling() {
             stopVoiceLivePolling();
-            // Poll every 3 seconds during voice call
+            // Poll every 1.5 seconds during voice call
             voicePollingInterval = setInterval(async () => {
                 if (!isCallActive) { stopVoiceLivePolling(); return; }
+
+                // 1. Live status update (fetching details as soon as verified)
+                if (!isSessionVerified && currentSessionId) {
+                    try {
+                        const statusRes = await fetch(`/api/voice-session-status?sessionId=${currentSessionId}`);
+                        if (statusRes.ok) {
+                            const statusData = await statusRes.json();
+                            if (statusData.verified) {
+                                isSessionVerified = true;
+
+                                // Update receipt preview details in real-time
+                                const setVal = (id, val) => {
+                                    const el = document.getElementById(id);
+                                    if (el && val && val !== '-') {
+                                        el.textContent = val;
+                                        el.classList.remove('updated');
+                                        void el.offsetWidth; // trigger reflow
+                                        el.classList.add('updated');
+                                    }
+                                };
+
+                                setVal('rec-name', statusData.name || '-');
+                                setVal('rec-phone', statusData.phone || '-');
+
+                                // Sync local bookingState
+                                bookingState.data.mumukshu_name = statusData.name;
+                                bookingState.data.mumukshu_phone = statusData.phone;
+                                bookingState.data.centre_name = statusData.centre_name;
+                            }
+                        }
+                    } catch (e) { /* silent fail */ }
+                }
+
+                // 2. Booking saved check (polls if new completed booking is inserted)
                 try {
                     const res = await fetch('/api/bookings');
                     if (!res.ok) return;
@@ -1243,7 +1422,7 @@
                         renderBookingsList(bookings);
                     }
                 } catch (e) { /* silent fail */ }
-            }, 3000);
+            }, 1500);
         }
 
         function stopVoiceLivePolling() {
@@ -1842,6 +2021,40 @@
             resetChat();
             document.getElementById('refresh-bookings-btn').onclick = loadRecentBookings;
             document.getElementById('reset-chat-btn').onclick = resetChat;
+
+            // Submit voice text input handler
+            const voiceTextInput = document.getElementById('voice-text-input');
+            const voiceTextSubmit = document.getElementById('voice-text-submit');
+
+            const submitVoiceText = () => {
+                const val = voiceTextInput.value.trim();
+                if (!val) return;
+
+                // Stop active playback immediately if agent was speaking
+                stopActivePlayback();
+
+                // Set pending text
+                voiceTextInputPending = val;
+                voiceTextInput.value = '';
+
+                // Disable during send to prevent duplicates
+                voiceTextInput.disabled = true;
+                voiceTextSubmit.disabled = true;
+
+                // Stop active recording (if any) to resolve the recordUserAudio promise
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    try {
+                        mediaRecorder.stop();
+                    } catch (e) { }
+                }
+            };
+
+            if (voiceTextSubmit) voiceTextSubmit.onclick = submitVoiceText;
+            if (voiceTextInput) {
+                voiceTextInput.onkeydown = (e) => {
+                    if (e.key === 'Enter') submitVoiceText();
+                };
+            }
         });
     </script>
 </body>
