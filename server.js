@@ -78,115 +78,97 @@ app.post('/verify-phone', async (req, res) => {
 
 // ── API VERIFY PHONE (FOR N8N CUSTOM TOOL) ───────────────────────────────────
 // ── API VERIFY PHONE (FOR N8N CUSTOM TOOL) ───────────────────────────────────
+// ── API VERIFY PHONE (Optimized for Voice Agent) ───────────────────────────
 app.post('/api/verify-phone', async (req, res) => {
     try {
-        console.log('\n========================================');
-        console.log('PHONE VERIFICATION REQUEST');
-        console.log('Request Body:', JSON.stringify(req.body, null, 2));
-
         const phoneVal = req.body.phone_number || req.body.phone;
+        if (!phoneVal) return res.json({ found: false, error: 'Phone required' });
 
-        if (!phoneVal) {
-            console.log('ERROR: No phone number received');
-
-            return res.json({
-                found: false,
-                error: 'Phone number is required'
-            });
-        }
-
-        const cleaned = String(phoneVal)
-            .replace(/\D/g, '')
-            .replace(/^91/, '')
-            .slice(-10);
-
-        console.log('Original Phone:', phoneVal);
-        console.log('Cleaned Phone:', cleaned);
-
+        const cleaned = String(phoneVal).replace(/\D/g, '').slice(-10);
         const { getPool } = require('./lib/db');
 
         const [rows] = await getPool().query(
-            `
-            SELECT
-                user_id,
-                phone,
-                name,
-                centre_name
-            FROM registered_users
-            WHERE RIGHT(phone,10)=?
-            LIMIT 1
-            `,
+            `SELECT user_id, phone, name, centre_name 
+             FROM registered_users 
+             WHERE RIGHT(phone, 10) = ? LIMIT 1`,
             [cleaned]
         );
 
-        console.log('Rows Found:', rows.length);
-
         if (!rows.length) {
-            console.log('Phone number NOT found');
-
-            return res.json({
-                found: false,
-                phone_number: cleaned,
-                message: 'Phone number not registered'
-            });
+            return res.json({ found: false });
         }
 
         const user = rows[0];
 
+        // Cache for the UI Live Preview
         if (req.body.sessionId) {
-            console.log(`Caching verified user details for session: ${req.body.sessionId}`);
             verifiedSessions.set(req.body.sessionId, {
                 verified: true,
-                user_id: user.user_id,
-                phone: user.phone,
                 name: user.name,
-                centre_name: user.centre_name
+                centre_name: user.centre_name,
+                phone: user.phone
             });
         }
 
-        console.log('User Found:', {
-            user_id: user.user_id,
-            phone: user.phone,
-            name: user.name,
-            centre_name: user.centre_name
-        });
-
+        // Return flat JSON structure for the n8n AI Agent
         return res.json({
             found: true,
-            user_id: user.user_id,
-            phone: user.phone,
             name: user.name,
-            centre_name: user.centre_name
+            centre_name: user.centre_name,
+            phone: user.phone
         });
 
     } catch (err) {
         console.error('[API VERIFY PHONE ERROR]', err);
-
-        return res.status(500).json({
-            found: false,
-            error: err.message
-        });
+        return res.status(500).json({ found: false, error: err.message });
     }
 });
 
-// ── GET VOICE SESSION STATUS (FOR UI LIVE UPDATE) ─────────────────────────────
+// ── GET VOICE SESSION STATUS (Used by UI) ──────────────────────────────────
+// ── GET VOICE SESSION STATUS (Used by UI) ──────────────────────────────────
 app.get('/api/voice-session-status', (req, res) => {
+    // 1. Extract sessionId from the request query
     const { sessionId } = req.query;
+
     if (!sessionId) {
         return res.status(400).json({ error: 'sessionId is required' });
     }
+
+    let sessionInfo = null;
+
+    // 2. Check the memory cache
     if (verifiedSessions.has(sessionId)) {
-        return res.json(verifiedSessions.get(sessionId));
+        sessionInfo = verifiedSessions.get(sessionId);
+    } else {
+        // 3. NOW call the helper function with the defined sessionId
+        const dbVerified = getVerifiedUserFromSession(sessionId);
+        if (dbVerified) {
+            verifiedSessions.set(sessionId, dbVerified);
+            sessionInfo = dbVerified;
+        }
     }
 
-    // Try to get verified user details from n8n SQLite database
-    const dbVerified = getVerifiedUserFromSession(sessionId);
-    if (dbVerified) {
-        verifiedSessions.set(sessionId, dbVerified);
-        return res.json(dbVerified);
+    if (sessionInfo && sessionInfo.verified) {
+        return res.json({
+            verified: true,
+            name: sessionInfo.name,
+            centre_name: sessionInfo.centre_name,
+            phone: sessionInfo.phone,
+            identity: {
+                verified: 'true',
+                name: sessionInfo.name,
+                centre_name: sessionInfo.centre_name,
+                phone: sessionInfo.phone
+            }
+        });
     }
 
-    return res.json({ verified: false });
+    return res.json({ 
+        verified: false,
+        identity: {
+            verified: 'false'
+        }
+    });
 });
 
 // ── API SAVE BOOKING (FOR N8N CUSTOM TOOL) ───────────────────────────────────
@@ -289,25 +271,25 @@ async function getWelcomeAudio() {
 function normalizeGujaratiDigits(text) {
     if (!text) return '';
     let normalized = text.toLowerCase();
-    
-    // Replace Gujarati word digits with English digit chars
+
+    // Replace Gujarati and phonetic English word digits with English digit chars
     const map = {
         'શૂન્ય': '0', 'ઝીરો': '0',
-        'એક': '1',
-        'બે': '2',
-        'ત્રણ': '3',
-        'ચાર': '4',
-        'પાંચ': '5',
-        'છ': '6',
-        'સાત': '7',
-        'આઠ': '8',
-        'નવ': '9'
+        'એક': '1', 'વન': '1',
+        'બે': '2', 'ટુ': '2', 'ટૂ': '2',
+        'ત્રણ': '3', 'થ્રી': '3',
+        'ચાર': '4', 'ફોર': '4',
+        'પાંચ': '5', 'ફાઇવ': '5', 'ફાઈવ': '5',
+        'છ': '6', 'સિક્સ': '6',
+        'સાત': '7', 'સેવન': '7',
+        'આઠ': '8', 'એટ': '8',
+        'નવ': '9', 'નાઇન': '9', 'નાઈન': '9'
     };
-    
+
     for (const [word, digit] of Object.entries(map)) {
         normalized = normalized.split(word).join(digit);
     }
-    
+
     // Also replace native Gujarati digits (૦-૯)
     const nativeMap = {
         '૦': '0', '૧': '1', '૨': '2', '૩': '3', '૪': '4',
@@ -316,7 +298,7 @@ function normalizeGujaratiDigits(text) {
     for (const [char, digit] of Object.entries(nativeMap)) {
         normalized = normalized.split(char).join(digit);
     }
-    
+
     return normalized;
 }
 
@@ -333,7 +315,7 @@ function extractPhoneNumber(text) {
 
 function isFillerOrSilence(text) {
     if (!text) return true;
-    const clean = text.trim().toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g,"");
+    const clean = text.trim().toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, "");
     const fillers = ['okay', 'ok', 'so', 'yes', 'yeah', 'hallo', 'hello', 'હા', 'હાજી', 'ઓકે', 'સારું', 'só', 'right', 'correct', 'what', 'uh', 'um', 'ah', 'like', 'know'];
     return clean.length === 0 || fillers.includes(clean);
 }
@@ -382,8 +364,20 @@ app.get('/api/voice-welcome', async (req, res) => {
 
         // 2. Asynchronously initialize n8n in the background
         const silentWav = createSilentWav();
+        // ... inside app.get('/api/voice-welcome') ...
         const n8nForm = new FormData();
         n8nForm.append('data', silentWav, { filename: 'silent.wav', contentType: 'audio/wav' });
+
+        // ADD THIS: Inject verified status into the init call
+        // Ensure this is inside your app.get('/api/voice-welcome')
+        const sessionInfo = verifiedSessions.get(sessionId);
+        if (sessionInfo && sessionInfo.verified) {
+            n8nForm.append('user_context', JSON.stringify({
+                is_verified: true,
+                name: sessionInfo.name,
+                centre_name: sessionInfo.centre_name
+            }));
+        }
 
         const n8nUrl = `${process.env.N8N_WEBHOOK_URL}?sessionId=${sessionId}`;
         console.log(`[Welcome] Background initializing n8n session: ${n8nUrl}`);
@@ -392,7 +386,10 @@ app.get('/api/voice-welcome', async (req, res) => {
             headers: {
                 ...n8nForm.getHeaders()
             },
-            responseType: 'arraybuffer'
+            responseType: 'arraybuffer',
+            timeout: 60000,           // Add this
+            maxContentLength: Infinity, // Add this
+            maxBodyLength: Infinity     // Add this
         }).then(() => {
             console.log(`[Welcome] Background n8n initialization complete for session: ${sessionId}`);
         }).catch(err => {
@@ -407,6 +404,14 @@ app.get('/api/voice-welcome', async (req, res) => {
         return res.status(500).json({ error: 'Welcome pipeline failed', message: err.message });
     }
 });
+
+// Hardcoded mock database for development/testing
+const mockUsers = {
+    "9883636830": { name: "Mehul Pipalia", centre_name: "Kolkata Centre" },
+    "8582950365": { name: "Urja Pipalia", centre_name: "Kolkata Centre" },
+    "1234567890": { name: "Chetan Ganatra", centre_name: "Bangalore Centre" },
+    "2468013579": { name: "Yashvi Hemani", centre_name: "Ahmedabad Centre" }
+};
 
 // ── VOICE BOOKING PROXY (Sarvam → n8n → Sarvam) ──────────────────────────────
 // ── VOICE BOOKING PROXY (Phone Verification in Server.js) ────────────────────
@@ -518,10 +523,13 @@ app.post('/api/voice-booking', upload.single('data'), async (req, res) => {
         });
         n8nForm.append('history', history || '');
 
+        // Ensure this part is correctly populating the URL
         let n8nUrl = `${process.env.N8N_WEBHOOK_URL}?sessionId=${sessionId}`;
         const sessionInfo = verifiedSessions.get(sessionId);
+
         if (sessionInfo && sessionInfo.verified) {
-            n8nUrl += `&verified=true&name=${encodeURIComponent(sessionInfo.name)}&centre_name=${encodeURIComponent(sessionInfo.centre_name)}&phone=${encodeURIComponent(sessionInfo.phone)}`;
+            // Add verified info as query params that the AI Agent can easily read
+            n8nUrl += `&verified=true&name=${encodeURIComponent(sessionInfo.name)}&centre_name=${encodeURIComponent(sessionInfo.centre_name)}`;
         }
         console.log(`Forwarding audio to n8n: ${n8nUrl}`);
 

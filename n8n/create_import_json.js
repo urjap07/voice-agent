@@ -70,22 +70,21 @@ data.nodes.forEach(node => {
     }
 
     // 5. Inject chat history and verification details into AI Agent System Prompt
-    if (node.name === 'AI Agent' || node.type === '@n8n/n8n-nodes-langchain.agent') {
-        let originalText = node.parameters.text;
+    // 5. Inject chat history and verification details into AI Agent System Prompt
+    // Update the AI Agent section (Step 4 in your compiler)
+    if (node.name === 'AI Agent') {
+        const basePrompt = `તમે શ્રીમદ્ રાજચંદ્ર આત્મ તત્ત્વ રિસર્ચ સેન્ટરના અતિર્તિત સહાયક (Guest Assistant) છો.
+તમારે ફક્ત ગુજરાતીમાં જ વાતચીત કરવાની છે. 
+સ્ટ્રીક્ટ નિયમો:
+- **ગ્રીટિંગ નિયમ:** જો નામ અને સેન્ટર માહિતીમાં મળી જાય, તો તે માહિતીનો ઉપયોગ કરીને ગ્રીટ કરો અને ફરી ક્યારેય સ્વાગત સંદેશ (Welcome Message) બોલવો નહીં.
+- જો યુઝર વેરીફાઈડ હોય, તો ફોન નંબર ક્યારેય માંગવો નહીં.
+- જો યુઝર અજાણ્યો હોય, તો જ એકવાર સ્વાગત સંદેશ બોલી ફોન નંબર માંગવો.`;
 
-        // Clarify strict rules to avoid calling verify_phone without a phone number input
-        originalText = originalText.replace(
-            /\* verify_phone ટૂલ કૉલ કર્યા વગર આગળ વધવું સખત મનાઈ છે\./g,
-            "* જો યુઝર ફોન નંબર ન આપે, તો verify_phone ટૂલ કૉલ કરવો નહીં અને માત્ર ઉપર મુજબના રીમાઇન્ડર પૂછવા. પરંતુ એકવાર યુઝર ફોન નંબર આપે, તે પછી verify_phone ટૂલ કૉલ કર્યા વગર આગળ વધવું સખત મનાઈ છે."
-        );
-        originalText = originalText.replace(
-            /\* verify_phone ટૂલ કૉલ કર્યા વગર આગળ વધવું નહીં\./g,
-            "* જો યુઝર ફોન નંબર ન આપે, તો verify_phone ટૂલ કૉલ કરવો નહીં."
-        );
+        const injection = `={{ $('Webhook').item.json.query.verified === 'true' ? 
+            "\\n\\n[સિસ્ટમ માહિતી: યુઝર વેરીફાઈડ છે. નામ: " + $('Webhook').item.json.query.name + ", સેન્ટર: " + $('Webhook').item.json.query.centre_name + ". તમે આ યુઝરને ઓળખો છો, એટલે સ્વાગત સંદેશ બોલ્યા વગર સીધું જ તેમને પૂછો: 'આપ ક્યારથી ક્યાં સુધી આવવા માંગો છો?']" 
+            : "\\n\\n[સિસ્ટમ માહિતી: યુઝર અજાણ્યો છે.]" }}`;
 
-        const escapedText = originalText.replace(/"/g, '\\"').replace(/\r/g, '').replace(/\n/g, '\\n');
-        node.parameters.text = `={{ "${escapedText}" + ($('Webhook').item.json.body.history ? "\\n\\nઆ કૉલનો અગાઉનો ઇતિહાસ:\\n" + $('Webhook').item.json.body.history : "") + ($('Webhook').item.json.query.verified === 'true' ? "\\n\\n[સિસ્ટમ માહિતી: યુઝર વેરીફાઈડ છે. નામ: " + $('Webhook').item.json.query.name + ", સેન્ટર: " + $('Webhook').item.json.query.centre_name + ", ફોન: " + $('Webhook').item.json.query.phone + ". જો સિસ્ટમ માહિતી દર્શાવે કે યુઝર વેરીફાઈડ છે, તો ફરીથી verify_phone ટૂલ કૉલ કરવાની જરૂર નથી અને સીધા જ આગળના સ્ટેપ પર વધી શકો છો. તમારે હવે યુઝરને '" + $('Webhook').item.json.query.name + ", નમસ્કાર! " + $('Webhook').item.json.query.centre_name + " તરફથી આપનું સ્વાગત છે. આપ ક્યારથી ક્યાં સુધી આવવા માંગો છો?' કહીને આવકારવા અને તારીખો વિશે પૂછવું.]" : "") }}`;
-        console.log("Updated AI Agent prompt to inject dynamic history and verification info.");
+        node.parameters.text = basePrompt + injection;
     }
 
     // 6. Update verify_phone tool parameters with $fromAI

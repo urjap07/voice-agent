@@ -798,6 +798,7 @@
         let mediaRecorder;
         let audioChunks = [];
         let isRecording = false;
+        let activeStream = null;
         let currentSessionId = null;
         let activeAudioSource = null;
         let activeAudioContext = null;
@@ -909,6 +910,26 @@
             setSaveStatus('કનેક્ટ થઈ રહ્યું છે...');
             soundWave.classList.add('connecting');
             soundWave.classList.add('active');
+
+            // Request microphone access immediately to keep the stream open
+            try {
+                activeStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        autoGainControl: true,
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        channelCount: 1
+                    }
+                });
+            } catch (err) {
+                console.error('Microphone access denied:', err);
+                setSaveStatus('કૃપા કરીને માઇક્રોફોનની પરવાનગી આપો.', 'err');
+                resetButtonUIState();
+                disableOtherUIElements(false);
+                isCallActive = false;
+                stopVoiceLivePolling();
+                return;
+            }
 
             // Reset the Live Preview section
             document.getElementById('rec-name').textContent = '-';

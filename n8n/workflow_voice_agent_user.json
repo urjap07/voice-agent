@@ -1,0 +1,295 @@
+{
+  "id": "kJ6bUz1qrcf2sMO2",
+  "name": "Voice Agent",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=તમે શ્રીમદ્ રાજચંદ્ર આત્મ તત્ત્વ રિસર્ચ સેન્ટરના અતિથિ સહાયક (Guest Assistant) છો.\n\nતમારે ફક્ત ગુજરાતીમાં જ વાતચીત કરવાની છે. અવાજ અને લખાણમાં અત્યંત નમ્રતા, આદર અને ધીરજ રાખવાની છે.\n\n1. STARTUP PROTOCOL (Identity Check)\nવાતચીત શરૂ કરતા પહેલાં તરત જ get_identity ટૂલ કૉલ કરો.\n\nજો ટૂલના પરિણામમાં identity.verified 'true' હોય: તો તરત જ કહો: \"[identity.name], નમસ્કાર! [identity.centre_name] તરફથી આપનું સ્વાગત છે. હું તમારી બુકિંગ માટે મદદ કરીશ.\" અને સીધા જ આગમન તારીખ પૂછવા પર જાવ. (ફોન નંબર માંગવો નહીં).\n\nજો પરિણામમાં verified 'false' હોય અથવા ડેટા ન મળે: તો શરૂઆત કરો: \"નમસ્કાર! શ્રીમદ રાજચંદ્ર આત્મ તત્વ રિસર્ચ સેન્ટરમાં આપનું સ્વાગત છે. હું તમારી બુકિંગ માટે મદદ કરીશ. કૃપા કરીને આપનો નોંધાયેલ 10-અંકનો મોબાઈલ નંબર જણાવો.\"\n\n2. STRICT CONVERSATION & STATE RULES (Mandatory)\n\nGROUND STATE RULES:\n* સ્વાગત સંદેશ સમગ્ર કૉલ દરમિયાન ફક્ત 1 વાર જ બોલી શકાય.\n* શરૂઆતનો ફોન નંબર પ્રશ્ન સમગ્ર કૉલ દરમિયાન ફક્ત 1 વાર જ બોલી શકાય.\n* સ્વાગત સંદેશ બોલાઈ જાય પછી તેને ફરીથી બોલવો સખત મનાઈ છે.\n* ફોન નંબર ન મળે, ખોટો જવાબ આપે અથવા વાતચીત અટકી જાય તો પણ સ્વાગત સંદેશ ફરીથી ન બોલવો.\n* ફોન નંબર મળ્યા પછી ક્યારેય ફરીથી ફોન નંબર માંગવો નહીં.\n\nફોન નંબર: યુઝર નંબર આપે કે તરત જ verify_phone ટૂલ કૉલ કરો. જો found=true મળે તો જ \"[name], નમસ્કાર! [centre_name] તરફથી આપનું સ્વાગત છે.\" કહી આગળ વધો. જો found=false મળે, તો: \"માફ કરશો, આ ફોન નંબર આપણી સિસ્ટમમાં નોંધાયેલ નથી.\" કહી કૉલ સમાપ્ત કરો.\n\nસ્વાગત સંદેશ: સમગ્ર કૉલ દરમિયાન ફક્ત 1 વાર જ બોલી શકાય.\n\nએક સમયે એક જ પ્રશ્ન: ક્યારેય એકથી વધુ પ્રશ્નો સાથે ન પૂછવા.\n\nપ્રતિભાવો: ખૂબ ટૂંકા રાખવા (મહત્તમ 1-2 વાક્યો).\n\nભાષા: ગુજરાતી સિવાય બીજી કોઈ ભાષાનો ઉપયોગ કરવો નહીં. નામ પાછળ 'ભાઈ' કે 'બહેન' લગાવવું નહીં.\n\n3. વાર્તાલાપ ક્રમ (Steps after greeting)\n\nઆગમન અને પ્રસ્થાન તારીખ: પૂછો: \"આપ ક્યારથી ક્યાં સુધી આવવા માંગો છો?\" (તારીખ હંમેશા YYYY-MM-DD માં કન્વર્ટ કરવી, વર્ષ સ્પષ્ટ ન હોય તો 2026 ગણવું).\n\nભોજન વ્યવસ્થા: પૂછો: \"આપને બ્રેકફાસ્ટ, લંચ અને ડિનરમાંથી શું જોઈએ? અને આહાર Regular છે કે Jain?\"\n\nરહેઠાણ: પૂછો: \"શું આપને રહેવા માટે રૂમની જરૂર છે?\" (હા હોય તો ગ્રાઉન્ડ ફ્લોર કે કોઈ પણ માળ?).\n\nકુલ વ્યક્તિઓ: પૂછો: \"કૃપા કરીને જણાવો કે કુલ કેટલા વ્યક્તિઓ પધારવાના છે?\"\n\nબુકિંગ પુષ્ટિકરણ: બધી વિગતો રજૂ કરી પૂછો: \"શું હું બુકિંગ કન્ફર્મ કરું?\" - કન્ફર્મ કરે પછી save_booking ટૂલ કૉલ કરો.\n\nસમાપ્તિ: Booking ID મળ્યા પછી બોલો: \"આપની બુકિંગ કન્ફર્મ થઈ ગઈ છે! આપનો બુકિંગ નંબર છે: [booking_id]. ધન્યવાદ!\"\n\n4. TECHNICAL CONSTRAINTS\n\nverify_phone અથવા get_identity ટૂલ કૉલ કર્યા વગર આગળ વધવું સખત મનાઈ છે.\n\nજો યુઝર ગુજરાતી શબ્દોમાં નંબર બોલે (દા.ત. 'નવ આઠ આઠ'), તો તેને અંકમાં રૂપાંતરિત કરીને જ ટૂલમાં પાસ કરવો.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        240,
+        0
+      ],
+      "id": "b3826ec0-d039-4e14-aec8-49d45d5b8fea",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -16,
+        224
+      ],
+      "id": "03e2aa60-2db2-48b1-9bd4-5bf6ad5ffdd4",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "5xZjzMmSz1NrMypX",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sarvam-chat-loop",
+        "responseMode": "lastNode",
+        "responseData": "firstEntryBinary",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -288,
+        16
+      ],
+      "id": "28a8e985-1eca-4115-83a3-0703223a279a",
+      "name": "Webhook",
+      "webhookId": "1bad23e8-f7e0-4ccb-a0f9-bdabd1b14431"
+    },
+    {
+      "parameters": {
+        "speechToTextOptions": {}
+      },
+      "type": "n8n-nodes-sarvam.sarvam",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        16
+      ],
+      "id": "d08bfb49-ffbe-4872-99be-9f4684ddb449",
+      "name": "Speech to text",
+      "credentials": {
+        "sarvamApi": {
+          "id": "42IIdFHMVVvHuPZ6",
+          "name": "Sarvam AI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "textToSpeech",
+        "text": "={{ $json.output.replace(/[^\\x00-\\x7F\\u0A80-\\u0AFF]/g, '') }}",
+        "ttsTargetLanguage": "gu-IN",
+        "textToSpeechOptions": {
+          "output_audio_codec": "wav",
+          "speaker": "shruti"
+        }
+      },
+      "type": "n8n-nodes-sarvam.sarvam",
+      "typeVersion": 1,
+      "position": [
+        592,
+        0
+      ],
+      "id": "aef064d4-54c9-4f46-8970-92cddf17b807",
+      "name": "Text to speech",
+      "credentials": {
+        "sarvamApi": {
+          "id": "42IIdFHMVVvHuPZ6",
+          "name": "Sarvam AI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook').item.json.query.sessionId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        160,
+        224
+      ],
+      "id": "54f1c99c-5dd6-4f9e-a06e-2db5ad3930e7",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Saves a completed booking to the database and returns a booking ID. Input must be a JSON object with booking fields.",
+        "method": "POST",
+        "url": "http://localhost:3000/api/save-booking",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"mumukshu_name\": \"{{ $fromAI('mumukshu_name', 'The guest name retrieved during phone registration', 'string') }}\",\n  \"mumukshu_phone\": \"{{ $fromAI('mumukshu_phone', 'The 10-digit registered phone number', 'string') }}\",\n  \"start_date\": \"{{ $fromAI('start_date', 'The check-in/arrival date in YYYY-MM-DD format', 'string') }}\",\n  \"end_date\": \"{{ $fromAI('end_date', 'The check-out/departure date in YYYY-MM-DD format', 'string') }}\",\n  \"total_persons\": {{ $fromAI('total_persons', 'The total number of persons', 'number', 1) }},\n  \"wants_room\": {{ $fromAI('wants_room', 'Boolean indicating if the guest needs accommodation/room', 'boolean', false) }},\n  \"floor_preference\": \"{{ $fromAI('floor_preference', 'Floor preference: Ground floor or Any floor', 'string', 'Any floor') }}\",\n  \"has_breakfast\": {{ $fromAI('has_breakfast', 'Boolean indicating if breakfast is required', 'boolean', false) }},\n  \"has_lunch\": {{ $fromAI('has_lunch', 'Boolean indicating if lunch is required', 'boolean', false) }},\n  \"has_dinner\": {{ $fromAI('has_dinner', 'Boolean indicating if dinner is required', 'boolean', false) }},\n  \"dietary_preference\": \"{{ $fromAI('dietary_preference', 'Dietary preference: Regular or Jain', 'string', 'Regular') }}\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        320,
+        288
+      ],
+      "id": "f3e31787-6e3f-427a-a182-3a88729aa779",
+      "name": "save_booking"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use this tool immediately when the user provides a phone number. Input: phone_number (string, clean 10-digit phone number, no country code). Returns user name and centre name.",
+        "method": "POST",
+        "url": "http://localhost:3000/api/verify-phone",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"phone_number\": \"{{ $fromAI('phone_number', 'The clean 10-digit mobile number of the user', 'string') }}\",\n  \"sessionId\": \"{{ $('Webhook').item.json.query.sessionId }}\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        464,
+        224
+      ],
+      "id": "c0038603-3d51-44b6-a75e-3e60527d1b11",
+      "name": "verify_phone"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Retrieves the guest's verified identity information if they are already verified via session info. Call this tool immediately at the start of the conversation.",
+        "method": "GET",
+        "url": "=http://localhost:3000/api/voice-session-status?sessionId={{ $('Webhook').item.json.query.sessionId }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        600,
+        150
+      ],
+      "id": "d1c99c4f-9ef4-4f46-8970-92cddf17b80a",
+      "name": "get_identity"
+    },
+    {
+      "parameters": {
+        "jsCode": "const map = {\n    'શૂન્ય': '0', 'ઝીરો': '0', '૦': '0',\n    'એક': '1', '૧': '1', 'વન': '1',\n    'બે': '2', '૨': '2', 'ટુ': '2', 'ટૂ': '2',\n    'ત્રણ': '3', '૩': '3', 'થ્રી': '3',\n    'ચાર': '4', '૪': '4', 'ફોર': '4',\n    'પાંચ': '5', '૫': '5', 'ફાઇવ': '5', 'ફાઈવ': '5',\n    'છ': '6', '૬': '6', 'સિક્સ': '6',\n    'સાત': '7', '૭': '7', 'સેવન': '7',\n    'આઠ': '8', '૮': '8', 'એટ': '8',\n    'નવ': '9', '૯': '9', 'નાઇન': '9', 'નાઈન': '9'\n};\n\nfor (const item of $input.all()) {\n    let text = item.json.transcript || \"\";\n    let normalized = text.toLowerCase();\n    for (const [word, digit] of Object.entries(map)) {\n        normalized = normalized.split(word).join(digit);\n    }\n    // Remove spaces between numbers\n    normalized = normalized.replace(/(\\d)\\s+(?=\\d)/g, '$1');\n    item.json.transcript = normalized;\n}\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        100,
+        16
+      ],
+      "id": "e9b25123-5e92-411a-a28c-7f5b3a241cb1",
+      "name": "Normalize Gujarati Digits"
+    }
+  ],
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Text to speech",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Speech to text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Speech to text": {
+      "main": [
+        [
+          {
+            "node": "Normalize Gujarati Digits",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Gujarati Digits": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "save_booking": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "verify_phone": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_identity": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c586c9bab2e564552d5f9abfbc731a857daebaca3ded1f97abf5cd37c156b74e"
+  }
+}

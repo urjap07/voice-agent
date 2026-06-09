@@ -6,7 +6,7 @@ const FormData = require('form-data');
 
 async function runTest() {
     try {
-        const textToSpeak = "નવ આઠ આઠ ત્રણ છ છ આઠ ત્રણ ત્રણ શૂન્ય"; // 9883636830 in Gujarati
+        const textToSpeak = "આઠ પાંચ આઠ ટુ નવ પાંચ શૂન્ય ત્રણ છ પાંચ"; // 8582950365 in mixed Gujarati/English phonetic
         const testSessionId = `test_voice_${Date.now()}`;
         console.log(`Using Session ID: ${testSessionId}`);
 
