@@ -5,9 +5,9 @@
   "nodes": [
     {
       "parameters": {
-        "promptType": "define",
-        "text": "=તમે શ્રીમદ્ રાજચંદ્ર આત્મ તત્ત્વ રિસર્ચ સેન્ટરના અતિથિ સહાયક (Guest Assistant) છો.\n\nતમારે ફક્ત ગુજરાતીમાં જ વાતચીત કરવાની છે. અવાજ અને લખાણમાં અત્યંત નમ્રતા, આદર અને ધીરજ રાખવાની છે.\n\n1. STARTUP PROTOCOL (Identity Check)\nવાતચીત શરૂ કરતા પહેલાં તરત જ get_identity ટૂલ કૉલ કરો.\n\nજો ટૂલના પરિણામમાં identity.verified 'true' હોય: તો તરત જ કહો: \"[identity.name], નમસ્કાર! [identity.centre_name] તરફથી આપનું સ્વાગત છે. હું તમારી બુકિંગ માટે મદદ કરીશ.\" અને સીધા જ આગમન તારીખ પૂછવા પર જાવ. (ફોન નંબર માંગવો નહીં).\n\nજો પરિણામમાં verified 'false' હોય અથવા ડેટા ન મળે: તો શરૂઆત કરો: \"નમસ્કાર! શ્રીમદ રાજચંદ્ર આત્મ તત્વ રિસર્ચ સેન્ટરમાં આપનું સ્વાગત છે. હું તમારી બુકિંગ માટે મદદ કરીશ. કૃપા કરીને આપનો નોંધાયેલ 10-અંકનો મોબાઈલ નંબર જણાવો.\"\n\n2. STRICT CONVERSATION & STATE RULES (Mandatory)\n\nGROUND STATE RULES:\n* સ્વાગત સંદેશ સમગ્ર કૉલ દરમિયાન ફક્ત 1 વાર જ બોલી શકાય.\n* શરૂઆતનો ફોન નંબર પ્રશ્ન સમગ્ર કૉલ દરમિયાન ફક્ત 1 વાર જ બોલી શકાય.\n* સ્વાગત સંદેશ બોલાઈ જાય પછી તેને ફરીથી બોલવો સખત મનાઈ છે.\n* ફોન નંબર ન મળે, ખોટો જવાબ આપે અથવા વાતચીત અટકી જાય તો પણ સ્વાગત સંદેશ ફરીથી ન બોલવો.\n* ફોન નંબર મળ્યા પછી ક્યારેય ફરીથી ફોન નંબર માંગવો નહીં.\n\nફોન નંબર: યુઝર નંબર આપે કે તરત જ verify_phone ટૂલ કૉલ કરો. જો found=true મળે તો જ \"[name], નમસ્કાર! [centre_name] તરફથી આપનું સ્વાગત છે.\" કહી આગળ વધો. જો found=false મળે, તો: \"માફ કરશો, આ ફોન નંબર આપણી સિસ્ટમમાં નોંધાયેલ નથી.\" કહી કૉલ સમાપ્ત કરો.\n\nસ્વાગત સંદેશ: સમગ્ર કૉલ દરમિયાન ફક્ત 1 વાર જ બોલી શકાય.\n\nએક સમયે એક જ પ્રશ્ન: ક્યારેય એકથી વધુ પ્રશ્નો સાથે ન પૂછવા.\n\nપ્રતિભાવો: ખૂબ ટૂંકા રાખવા (મહત્તમ 1-2 વાક્યો).\n\nભાષા: ગુજરાતી સિવાય બીજી કોઈ ભાષાનો ઉપયોગ કરવો નહીં. નામ પાછળ 'ભાઈ' કે 'બહેન' લગાવવું નહીં.\n\n3. વાર્તાલાપ ક્રમ (Steps after greeting)\n\nઆગમન અને પ્રસ્થાન તારીખ: પૂછો: \"આપ ક્યારથી ક્યાં સુધી આવવા માંગો છો?\" (તારીખ હંમેશા YYYY-MM-DD માં કન્વર્ટ કરવી, વર્ષ સ્પષ્ટ ન હોય તો 2026 ગણવું).\n\nભોજન વ્યવસ્થા: પૂછો: \"આપને બ્રેકફાસ્ટ, લંચ અને ડિનરમાંથી શું જોઈએ? અને આહાર Regular છે કે Jain?\"\n\nરહેઠાણ: પૂછો: \"શું આપને રહેવા માટે રૂમની જરૂર છે?\" (હા હોય તો ગ્રાઉન્ડ ફ્લોર કે કોઈ પણ માળ?).\n\nકુલ વ્યક્તિઓ: પૂછો: \"કૃપા કરીને જણાવો કે કુલ કેટલા વ્યક્તિઓ પધારવાના છે?\"\n\nબુકિંગ પુષ્ટિકરણ: બધી વિગતો રજૂ કરી પૂછો: \"શું હું બુકિંગ કન્ફર્મ કરું?\" - કન્ફર્મ કરે પછી save_booking ટૂલ કૉલ કરો.\n\nસમાપ્તિ: Booking ID મળ્યા પછી બોલો: \"આપની બુકિંગ કન્ફર્મ થઈ ગઈ છે! આપનો બુકિંગ નંબર છે: [booking_id]. ધન્યવાદ!\"\n\n4. TECHNICAL CONSTRAINTS\n\nverify_phone અથવા get_identity ટૂલ કૉલ કર્યા વગર આગળ વધવું સખત મનાઈ છે.\n\nજો યુઝર ગુજરાતી શબ્દોમાં નંબર બોલે (દા.ત. 'નવ આઠ આઠ'), તો તેને અંકમાં રૂપાંતરિત કરીને જ ટૂલમાં પાસ કરવો.",
-        "options": {}
+        "promptType": "systemMessage",
+        "options": {},
+        "systemMessage": "=તમે શ્રીમદ્ રાજચંદ્ર આત્મ તત્ત્વ રિસર્ચ સેન્ટરના અતિથિ સહાયક છો.\n\nSTRICT RULES:\n- ફક્ત ગુજરાતીમાં જ બોલો\n- એક સમયે ફક્ત એક જ પ્રશ્ન\n- max 2 sentences per response\n\n--- FLOW ---\n\n0. GREETING_DONE PREFIX\nજો input [GREETING_DONE:name=...,centre=...] થી શરૂ થાય:\n- get_identity call કરવો નહીં\n- greeting ફરી ન બોલો\n- જો input માં \"check-in:\" પણ હોય → dates confirmed → Q2 directly પૂછો\n- નહીં તો → Q1 પૂછો: \"Aap kyaarthi kyaa sudhi aavva maango cho?\"\n\n1. STARTUP (no GREETING_DONE prefix, empty history)\nget_identity call કરો — ફક્ત એક જ વાર, ફરી ક્યારેય નહીં.\n- verified=true → \"[name], Namaskar! [centre_name] tharfthi swaagat.\" → Q1 પૂછો\n- verified=false → \"Namaskar! Das ankno registered mobile number janavo.\"\n\n2. PHONE (only when verified=false and user gives number)\nverify_phone call કરો — ફક્ત એક જ વાર, ફરી ક્યારેય નહીં.\n- found=true → \"[name], Namaskar! [centre_name] tharfthi swaagat.\" → Q1 પૂછો\n- found=false → \"Maaf karjo, aa number nondhaayelu nathi.\"\n\n3. BOOKING — ક્રમ પ્રમાણે, ક્યારેય skip નહીં\n\nQ1 → \"Aap kyaarthi kyaa sudhi aavva maango cho?\"\n      Both dates given → Q2. Only one date → ask the other.\n\nQ2 → \"Breakfast, lunch, dinner mathi shu joie chhe?\"\n      Answered → Q2b: \"Aahar regular chhe ke Jain?\"\n      Q2b answered → Q3.\n\nQ3 → \"Raheva maate room joie chhe?\"\n      Yes → Q3b: \"Ground floor joie chhe ke koi pan maal chalse?\"\n      No → Q4. Q3b answered → Q4.\n\nQ4 → \"Kul ketla vyakti aavva na chhe?\"\n      Answered → Q5.\n\nQ5 → Summarize all details, then: \"Shu hu booking confirm karu?\"\n\n4. SAVE\nUser \"હા / yes / confirm\" → save_booking call કરો.\nSuccess → \"Booking thayi! Booking number: [booking_id]. Aavjo!\"\n\nIMPORTANT: get_identity અને verify_phone ફક્ત એક જ વાર. Q1-Q5 skip કરવા નહીં."
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
@@ -62,10 +62,29 @@
     },
     {
       "parameters": {
-        "speechToTextOptions": {}
+        "method": "POST",
+        "url": "https://api.openai.com/v1/audio/transcriptions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "model",
+              "value": "whisper-1"
+            }
+          ]
+        },
+        "options": {}
       },
-      "type": "n8n-nodes-sarvam.sarvam",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         -32,
         16
@@ -73,24 +92,32 @@
       "id": "d08bfb49-ffbe-4872-99be-9f4684ddb449",
       "name": "Speech to text",
       "credentials": {
-        "sarvamApi": {
-          "id": "42IIdFHMVVvHuPZ6",
-          "name": "Sarvam AI account"
+        "openAiApi": {
+          "id": "5xZjzMmSz1NrMypX",
+          "name": "OpenAI account"
         }
       }
     },
     {
       "parameters": {
-        "operation": "textToSpeech",
-        "text": "={{ $json.output.replace(/[^\\x00-\\x7F\\u0A80-\\u0AFF]/g, '') }}",
-        "ttsTargetLanguage": "gu-IN",
-        "textToSpeechOptions": {
-          "output_audio_codec": "wav",
-          "speaker": "shruti"
+        "method": "POST",
+        "url": "https://api.openai.com/v1/audio/speech",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'tts-1', input: $json.output.replace(/[^\\u0000-\\u007F\\u0A80-\\u0AFF]/g, ''), voice: 'nova', response_format: 'wav', speed: 0.85 }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          }
         }
       },
-      "type": "n8n-nodes-sarvam.sarvam",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         592,
         0
@@ -98,9 +125,9 @@
       "id": "aef064d4-54c9-4f46-8970-92cddf17b807",
       "name": "Text to speech",
       "credentials": {
-        "sarvamApi": {
-          "id": "42IIdFHMVVvHuPZ6",
-          "name": "Sarvam AI account"
+        "openAiApi": {
+          "id": "5xZjzMmSz1NrMypX",
+          "name": "OpenAI account"
         }
       }
     },
@@ -122,7 +149,7 @@
       "parameters": {
         "toolDescription": "Saves a completed booking to the database and returns a booking ID. Input must be a JSON object with booking fields.",
         "method": "POST",
-        "url": "http://localhost:3000/api/save-booking",
+        "url": "=http://localhost:3000/api/save-booking?sessionId={{ $('Webhook').first().json.query.sessionId }}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"mumukshu_name\": \"{{ $fromAI('mumukshu_name', 'The guest name retrieved during phone registration', 'string') }}\",\n  \"mumukshu_phone\": \"{{ $fromAI('mumukshu_phone', 'The 10-digit registered phone number', 'string') }}\",\n  \"start_date\": \"{{ $fromAI('start_date', 'The check-in/arrival date in YYYY-MM-DD format', 'string') }}\",\n  \"end_date\": \"{{ $fromAI('end_date', 'The check-out/departure date in YYYY-MM-DD format', 'string') }}\",\n  \"total_persons\": {{ $fromAI('total_persons', 'The total number of persons', 'number', 1) }},\n  \"wants_room\": {{ $fromAI('wants_room', 'Boolean indicating if the guest needs accommodation/room', 'boolean', false) }},\n  \"floor_preference\": \"{{ $fromAI('floor_preference', 'Floor preference: Ground floor or Any floor', 'string', 'Any floor') }}\",\n  \"has_breakfast\": {{ $fromAI('has_breakfast', 'Boolean indicating if breakfast is required', 'boolean', false) }},\n  \"has_lunch\": {{ $fromAI('has_lunch', 'Boolean indicating if lunch is required', 'boolean', false) }},\n  \"has_dinner\": {{ $fromAI('has_dinner', 'Boolean indicating if dinner is required', 'boolean', false) }},\n  \"dietary_preference\": \"{{ $fromAI('dietary_preference', 'Dietary preference: Regular or Jain', 'string', 'Regular') }}\"\n}\n",
@@ -174,7 +201,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const map = {\n    'શૂન્ય': '0', 'ઝીરો': '0', '૦': '0',\n    'એક': '1', '૧': '1', 'વન': '1',\n    'બે': '2', '૨': '2', 'ટુ': '2', 'ટૂ': '2',\n    'ત્રણ': '3', '૩': '3', 'થ્રી': '3',\n    'ચાર': '4', '૪': '4', 'ફોર': '4',\n    'પાંચ': '5', '૫': '5', 'ફાઇવ': '5', 'ફાઈવ': '5',\n    'છ': '6', '૬': '6', 'સિક્સ': '6',\n    'સાત': '7', '૭': '7', 'સેવન': '7',\n    'આઠ': '8', '૮': '8', 'એટ': '8',\n    'નવ': '9', '૯': '9', 'નાઇન': '9', 'નાઈન': '9'\n};\n\nfor (const item of $input.all()) {\n    let text = item.json.transcript || \"\";\n    let normalized = text.toLowerCase();\n    for (const [word, digit] of Object.entries(map)) {\n        normalized = normalized.split(word).join(digit);\n    }\n    // Remove spaces between numbers\n    normalized = normalized.replace(/(\\d)\\s+(?=\\d)/g, '$1');\n    item.json.transcript = normalized;\n}\nreturn $input.all();"
+        "jsCode": "// Single-digit Gujarati + Devanagari word map (for phone numbers)\nconst singleDigitMap = {\n    'શૂન્ય': '0', 'ઝીરો': '0', '૦': '0', 'शून्य': '0', 'जीरो': '0', '०': '0',\n    'એક': '1', '૧': '1', 'वन': '1', 'एक': '1', '१': '1',\n    'બે': '2', '૨': '2', 'ટુ': '2', 'ટૂ': '2', 'दो': '2', 'बे': '2', '२': '2',\n    'ત્રણ': '3', '૩': '3', 'થ્રી': '3', 'तीन': '3', 'त्रण': '3', '३': '3',\n    'ચાર': '4', '૪': '4', 'ફોર': '4', 'चार': '4', '४': '4',\n    'પાંચ': '5', '૫': '5', 'ફાઇવ': '5', 'ફાઈવ': '5', 'पांच': '5', 'पाँच': '5', '५': '5',\n    'છ': '6', '૬': '6', 'સિક્સ': '6', 'छह': '6', 'छे': '6', '६': '6',\n    'સાત': '7', '૭': '7', 'સેવન': '7', 'सात': '7', '७': '7',\n    'આઠ': '8', '૮': '8', 'એટ': '8', 'आठ': '8', 'आट': '8', '८': '8',\n    'નવ': '9', '૯': '9', 'નાઇન': '9', 'નાઈન': '9', 'नौ': '9', 'नव': '9', '९': '9'\n};\n\nconst compoundMap = {\n    'અગિયાર': '11', 'ग्यारह': '11', 'બાર': '12', 'बारह': '12',\n    'તેર': '13', 'तेरह': '13', 'ચૌદ': '14', 'चौदह': '14',\n    'પંદર': '15', 'पंद्रह': '15', 'સોળ': '16', 'सोलह': '16',\n    'સત્તર': '17', 'सत्रह': '17', 'અઢાર': '18', 'अठारह': '18',\n    'ઓગણીસ': '19', 'उन्नीस': '19', 'વીસ': '20', 'बीस': '20',\n    'એકવીસ': '21', 'इक्कीस': '21', 'બાવીસ': '22', 'बाईस': '22',\n    'ત્રેવીસ': '23', 'तेईस': '23', 'ચોવીસ': '24', 'चौबीस': '24',\n    'પચ્ચીસ': '25', 'पच्चीस': '25', 'છવ્વીસ': '26', 'छब्बीस': '26',\n    'સત્તાવીસ': '27', 'सत्ताईस': '27', 'અઠ્ઠાવીસ': '28', 'अट्ठाईस': '28',\n    'ઓગણત્રીસ': '29', 'उनतीस': '29', 'ત્રીસ': '30', 'तीस': '30',\n    'એકત્રીસ': '31', 'इकतीस': '31', 'દસ': '10', 'दस': '10'\n};\n\nfor (const item of $input.all()) {\n    const query = $('Webhook').first().json.query || {};\n    const webhookHistory = ($('Webhook').first().json.history || '').trim();\n\n    if (query.start_date && query.end_date) {\n        // Server pre-parsed dates — use directly, skip STT normalization\n        item.json.input = `check-in: ${query.start_date}, check-out: ${query.end_date}`;\n    } else {\n        // Normalize STT transcript\n        let text = item.json.text || item.json.transcript || '';\n        let normalized = text;\n        for (const [word, digit] of Object.entries(compoundMap)) {\n            normalized = normalized.split(word).join(digit);\n        }\n        normalized = normalized.toLowerCase();\n        for (const [word, digit] of Object.entries(singleDigitMap)) {\n            normalized = normalized.split(word).join(digit);\n        }\n        normalized = normalized.replace(/\\b(\\d)\\b\\s+(?=\\b\\d\\b)/g, '$1');\n        item.json.input = normalized;\n    }\n\n    item.json.transcript = item.json.input;\n\n    // Always inject GREETING_DONE on first turn for verified users\n    // so the AI Agent skips get_identity and goes straight to the booking questions\n    if (query.verified === 'true' && query.name && !webhookHistory) {\n        item.json.input = `[GREETING_DONE:name=${query.name},centre=${query.centre_name}] ${item.json.input}`;\n    }\n}\nreturn $input.all();"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,

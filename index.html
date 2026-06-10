@@ -985,6 +985,14 @@
             stopSilenceDetection();
             stopVoiceLivePolling();
 
+            // Stop and release active stream tracks
+            if (activeStream) {
+                try {
+                    activeStream.getTracks().forEach(track => track.stop());
+                } catch (e) { }
+                activeStream = null;
+            }
+
             // Hide voice text input box
             const inputContainer = document.getElementById('voice-text-input-container');
             if (inputContainer) inputContainer.style.display = 'none';
@@ -1093,7 +1101,6 @@
 
         async function recordUserAudio() {
             return new Promise(async (resolve, reject) => {
-                let stream;
                 try {
                     if (voiceTextInputPending) {
                         resolve(null);
@@ -1103,28 +1110,16 @@
                     setUserListeningUI();
                     audioChunks = [];
 
-                    stream = await navigator.mediaDevices.getUserMedia({
-                        audio: {
-                            autoGainControl: true,
-                            echoCancellation: true,
-                            noiseSuppression: true,
-                            channelCount: 1
-                        }
-                    });
-
-                    if (voiceTextInputPending) {
-                        stream.getTracks().forEach(track => track.stop());
-                        resolve(null);
-                        return;
+                    if (!activeStream) {
+                        throw new Error("No active microphone stream.");
                     }
 
                     if (!isCallActive) {
-                        stream.getTracks().forEach(track => track.stop());
                         resolve(null);
                         return;
                     }
 
-                    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                    mediaRecorder = new MediaRecorder(activeStream, { mimeType: 'audio/webm' });
                     isRecording = true;
 
                     mediaRecorder.ondataavailable = (event) => {
@@ -1133,27 +1128,31 @@
 
                     mediaRecorder.onstop = () => {
                         isRecording = false;
+
+                        const stoppedByTextSubmit = Boolean(voiceTextInputPending);
+                        const hasRecordedSpeech = Boolean(mediaRecorder && mediaRecorder._hasRecordedSpeech);
+
+                        if (!stoppedByTextSubmit && !hasRecordedSpeech) {
+                            resolve(null);
+                            return;
+                        }
+
                         const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                         resolve(audioBlob);
                     };
 
                     mediaRecorder.start();
 
-                    startSilenceDetection(stream, () => {
+                    startSilenceDetection(activeStream, (hasRecordedSpeech = false) => {
                         if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                            mediaRecorder._hasRecordedSpeech = hasRecordedSpeech;
                             try {
                                 mediaRecorder.stop();
                             } catch (e) { }
                         }
-                        stream.getTracks().forEach(track => track.stop());
                     });
 
                 } catch (err) {
-                    if (stream) {
-                        try {
-                            stream.getTracks().forEach(track => track.stop());
-                        } catch (e) { }
-                    }
                     isRecording = false;
                     reject(err);
                 }
@@ -1204,7 +1203,7 @@
                         bar.style.transform = `scaleY(${Math.min(Math.max(scale, 0.3), 3.0)})`;
                     });
 
-                    if (now - recordingStartTime > 15000) {
+                    if (now - recordingStartTime > 20000) {
                         cleanupAndStop();
                         return;
                     }
@@ -1217,7 +1216,9 @@
                             silenceStart = now;
                         } else {
                             const silenceDuration = now - silenceStart;
-                            const maxSilence = hasSpoken ? 1200 : 2500;
+                            // 2000ms after speech (was 1200) — gives time for natural Gujarati speech pauses
+                            // 5000ms before any speech (was 2500) — gives time to start speaking
+                            const maxSilence = hasSpoken ? 2000 : 5000;
                             if (silenceDuration > maxSilence) {
                                 cleanupAndStop();
                                 return;
@@ -1235,7 +1236,7 @@
                             vadAudioContext.close();
                         } catch (e) { }
                     }
-                    onSilence();
+                    onSilence(hasSpoken);
                 };
 
                 requestAnimationFrame(checkAudio);
@@ -1498,8 +1499,8 @@
             listContainer.innerHTML = bookings.map(b => `
                 <div class="booking-item-card">
                     <div class="booking-item-info">
-                        <h5>${escapeHtml(b.mumukshu_name)}</h5>
-                        <p>📞 ${escapeHtml(b.mumukshu_phone)} | 📅 ${formatDate(b.start_date)} થી ${formatDate(b.end_date)}</p>
+                        <h5>${escapeHtml(b.mumukshu_name || '-')}</h5>
+                        <p>${b.mumukshu_phone ? '📞 ' + escapeHtml(b.mumukshu_phone) + ' | ' : ''}📅 ${formatDate(b.start_date)} થી ${formatDate(b.end_date)}</p>
                     </div>
                     <div class="booking-item-badge">ID: ${b.booking_id}</div>
                 </div>
@@ -1588,51 +1589,105 @@
         ];
 
         function parseDateRangeText(input) {
-            const cleanInput = input.trim().replace(/\s+/g, ' ');
-            const currentYear = 2026;
+            const digitMap = { '૦': '0', '૧': '1', '૨': '2', '૩': '3', '૪': '4', '૫': '5', '૬': '6', '૭': '7', '૮': '8', '૯': '9' };
+            const cleanInput = input
+                .trim()
+                .replace(/[૦-૯]/g, char => digitMap[char])
+                .replace(/[–—]/g, '-')
+                .replace(/\s+/g, ' ');
+            const currentYear = new Date().getFullYear();
+            const monthMap = {
+                january: 1, jan: 1, જાન્યુઆરી: 1,
+                february: 2, feb: 2, ફેબ્રુઆરી: 2,
+                march: 3, mar: 3, માર્ચ: 3,
+                april: 4, apr: 4, એપ્રિલ: 4,
+                may: 5, મે: 5,
+                june: 6, jun: 6, જૂન: 6,
+                july: 7, jul: 7, જુલાઈ: 7, જુલાઇ: 7,
+                august: 8, aug: 8, ઓગસ્ટ: 8, ઑગસ્ટ: 8,
+                september: 9, sep: 9, sept: 9, સપ્ટેમ્બર: 9,
+                october: 10, oct: 10, ઓક્ટોબર: 10,
+                november: 11, nov: 11, નવેમ્બર: 11,
+                december: 12, dec: 12, ડિસેમ્બર: 12
+            };
+            const monthToken = '[a-zA-Z\\u0A80-\\u0AFF]+';
+            const separator = '(?:-|to|થી|સુધી)';
 
-            const rangeRegex = /(\d{1,2})\s*(?:-|to)\s*(\d{1,2})\s*([a-zA-Z]+)/i;
-            const rangeMatch = cleanInput.match(rangeRegex);
+            const formatDateObj = (dateObj) => {
+                const year = dateObj.getFullYear();
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
 
-            if (rangeMatch) {
-                const startDay = parseInt(rangeMatch[1], 10);
-                const endDay = parseInt(rangeMatch[2], 10);
-                const monthName = rangeMatch[3];
+            const makeDate = (year, month, day) => {
+                const dateObj = new Date(Number(year), Number(month) - 1, Number(day));
+                if (
+                    dateObj.getFullYear() !== Number(year) ||
+                    dateObj.getMonth() !== Number(month) - 1 ||
+                    dateObj.getDate() !== Number(day)
+                ) return null;
+                return dateObj;
+            };
 
-                const startDateObj = new Date(`${startDay} ${monthName} ${currentYear}`);
-                const endDateObj = new Date(`${endDay} ${monthName} ${currentYear}`);
+            const parseMonth = (monthName) => monthMap[String(monthName || '').toLowerCase()];
+            const buildResult = (startDateObj, endDateObj) => {
+                if (!startDateObj || !endDateObj) return null;
+                return { start: formatDateObj(startDateObj), end: formatDateObj(endDateObj) };
+            };
 
-                if (!isNaN(startDateObj.getTime()) && !isNaN(endDateObj.getTime())) {
-                    return {
-                        start: startDateObj.toISOString().split('T')[0],
-                        end: endDateObj.toISOString().split('T')[0]
-                    };
-                }
+            const isoRegex = /(\d{4})[/-](\d{1,2})[/-](\d{1,2})/g;
+            const isoMatches = [...cleanInput.matchAll(isoRegex)];
+            if (isoMatches.length >= 2) {
+                return buildResult(
+                    makeDate(isoMatches[0][1], isoMatches[0][2], isoMatches[0][3]),
+                    makeDate(isoMatches[1][1], isoMatches[1][2], isoMatches[1][3])
+                );
             }
 
-            const singleRegex = /(\d{1,2})\s*([a-zA-Z]+)/i;
+            const fullRangeRegex = new RegExp(`(\\d{1,2})\\s*(${monthToken})\\s*(\\d{4})?\\s*${separator}\\s*(\\d{1,2})\\s*(${monthToken})\\s*(\\d{4})?`, 'i');
+            const fullRangeMatch = cleanInput.match(fullRangeRegex);
+            if (fullRangeMatch) {
+                const startMonth = parseMonth(fullRangeMatch[2]);
+                const endMonth = parseMonth(fullRangeMatch[5]);
+                const year = fullRangeMatch[6] || fullRangeMatch[3] || currentYear;
+                return buildResult(
+                    makeDate(year, startMonth, fullRangeMatch[1]),
+                    makeDate(year, endMonth, fullRangeMatch[4])
+                );
+            }
+
+            const compactRangeRegex = new RegExp(`(\\d{1,2})\\s*${separator}\\s*(\\d{1,2})\\s*(${monthToken})\\s*(\\d{4})?`, 'i');
+            const compactRangeMatch = cleanInput.match(compactRangeRegex);
+            if (compactRangeMatch) {
+                const month = parseMonth(compactRangeMatch[3]);
+                const year = compactRangeMatch[4] || currentYear;
+                return buildResult(
+                    makeDate(year, month, compactRangeMatch[1]),
+                    makeDate(year, month, compactRangeMatch[2])
+                );
+            }
+
+            const numericRangeRegex = /(\d{1,2})[/-](\d{1,2})(?:[/-](\d{4}))?\s*(?:-|to|થી|સુધી)\s*(\d{1,2})[/-](\d{1,2})[/-](\d{4})/i;
+            const numericRangeMatch = cleanInput.match(numericRangeRegex);
+            if (numericRangeMatch) {
+                return buildResult(
+                    makeDate(numericRangeMatch[3] || numericRangeMatch[6], numericRangeMatch[2], numericRangeMatch[1]),
+                    makeDate(numericRangeMatch[6], numericRangeMatch[5], numericRangeMatch[4])
+                );
+            }
+
+            const singleRegex = new RegExp(`(\\d{1,2})\\s*(${monthToken})\\s*(\\d{4})?`, 'i');
             const singleMatch = cleanInput.match(singleRegex);
-
             if (singleMatch) {
-                const startDay = parseInt(singleMatch[1], 10);
-                const monthName = singleMatch[2];
-
-                const startDateObj = new Date(`${startDay} ${monthName} ${currentYear}`);
-                if (!isNaN(startDateObj.getTime())) {
+                const startDateObj = makeDate(singleMatch[3] || currentYear, parseMonth(singleMatch[2]), singleMatch[1]);
+                if (startDateObj) {
                     const endDateObj = new Date(startDateObj);
                     endDateObj.setDate(startDateObj.getDate() + 1);
-                    return {
-                        start: startDateObj.toISOString().split('T')[0],
-                        end: endDateObj.toISOString().split('T')[0]
-                    };
+                    return buildResult(startDateObj, endDateObj);
                 }
             }
 
-            const isoRegex = /(\d{4}-\d{2}-\d{2})/g;
-            const isoMatches = cleanInput.match(isoRegex);
-            if (isoMatches && isoMatches.length >= 2) {
-                return { start: isoMatches[0], end: isoMatches[1] };
-            }
             return null;
         }
 
