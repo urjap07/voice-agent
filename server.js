@@ -51,14 +51,21 @@ function cacheVerifiedSession(sessionId, user) {
 function parseNaturalDateRange(input) {
     if (!input) return null;
 
-    // Gujarati compound number words → digits (for spoken date ranges)
+    // Gujarati/Devanagari number words → digits (for spoken date ranges)
     const gujaratiNumberWords = {
+        // Single digits (Gujarati)
+        'એક': '1', 'બે': '2', 'ત્રણ': '3', 'ચાર': '4', 'પાંચ': '5',
+        'છ': '6', 'સાત': '7', 'આઠ': '8', 'નવ': '9',
+        // Compound numbers (Gujarati)
         'દસ': '10', 'અગિયાર': '11', 'બાર': '12', 'તેર': '13', 'ચૌદ': '14',
         'પંદર': '15', 'સોળ': '16', 'સત્તર': '17', 'અઢાર': '18', 'ઓગણીસ': '19',
         'વીસ': '20', 'એકવીસ': '21', 'બાવીસ': '22', 'ત્રેવીસ': '23', 'ચોવીસ': '24',
         'પચ્ચીસ': '25', 'છવ્વીસ': '26', 'સત્તાવીસ': '27', 'અઠ્ઠાવીસ': '28',
         'ઓગણત્રીસ': '29', 'ત્રીસ': '30', 'એકત્રીસ': '31',
-        // Devanagari compound numbers (Whisper sometimes outputs these for Gujarati audio)
+        // Single digits (Devanagari — Whisper outputs these for Gujarati audio)
+        'एक': '1', 'दो': '2', 'तीन': '3', 'चार': '4', 'पाँच': '5', 'पांच': '5',
+        'छह': '6', 'छे': '6', 'सात': '7', 'आठ': '8', 'नौ': '9', 'नव': '9',
+        // Compound numbers (Devanagari)
         'दस': '10', 'ग्यारह': '11', 'बारह': '12', 'तेरह': '13', 'चौदह': '14',
         'पंद्रह': '15', 'सोलह': '16', 'सत्रह': '17', 'अठारह': '18', 'उन्नीस': '19',
         'बीस': '20', 'इक्कीस': '21', 'बाईस': '22', 'तेईस': '23', 'चौबीस': '24',
@@ -67,32 +74,51 @@ function parseNaturalDateRange(input) {
     };
 
     const digitMap = { '૦': '0', '૧': '1', '૨': '2', '૩': '3', '૪': '4', '૫': '5', '૬': '6', '૭': '7', '૮': '8', '૯': '9' };
+    const devanagariDigitMap = { '०': '0', '१': '1', '२': '2', '३': '3', '४': '4', '५': '5', '६': '6', '७': '7', '८': '8', '९': '9' };
     let cleanInput = String(input).trim()
         .replace(/[૦-૯]/g, char => digitMap[char])
+        .replace(/[०-९]/g, char => devanagariDigitMap[char])
         .replace(/[–—]/g, '-')
         .replace(/\s+/g, ' ');
 
-    // Replace compound number words before digit extraction
-    for (const [word, digit] of Object.entries(gujaratiNumberWords)) {
+    // Strip ordinal suffixes (1st→1, 2nd→2, 11th→11, etc.) so regex can match digits
+    cleanInput = cleanInput.replace(/(\d{1,2})(st|nd|rd|th)\b/gi, '$1');
+
+    // Replace number words before digit extraction (longer words first to avoid partial matches)
+    const sortedWords = Object.entries(gujaratiNumberWords).sort((a, b) => b[0].length - a[0].length);
+    for (const [word, digit] of sortedWords) {
         cleanInput = cleanInput.split(word).join(digit);
     }
 
     const currentYear = 2026;
     const monthMap = {
-        january: 1, jan: 1, 'જાન્યુઆરી': 1,
-        february: 2, feb: 2, 'ફેબ્રુઆરી': 2,
-        march: 3, mar: 3, 'માર્ચ': 3,
-        april: 4, apr: 4, 'એપ્રિલ': 4,
-        may: 5, 'મે': 5,
-        june: 6, jun: 6, 'જૂન': 6, 'june': 6,
-        july: 7, jul: 7, 'જુલાઈ': 7, 'જુલાઇ': 7,
-        august: 8, aug: 8, 'ઓગસ્ટ': 8, 'ઑગસ્ટ': 8,
-        september: 9, sep: 9, sept: 9, 'સપ્ટેમ્બર': 9,
-        october: 10, oct: 10, 'ઓક્ટોબર': 10,
-        november: 11, nov: 11, 'નવેમ્બર': 11,
-        december: 12, dec: 12, 'ડિસેમ્બર': 12
+        // English
+        january: 1, jan: 1,
+        february: 2, feb: 2,
+        march: 3, mar: 3,
+        april: 4, apr: 4,
+        may: 5,
+        june: 6, jun: 6,
+        july: 7, jul: 7,
+        august: 8, aug: 8,
+        september: 9, sep: 9, sept: 9,
+        october: 10, oct: 10,
+        november: 11, nov: 11,
+        december: 12, dec: 12,
+        // Gujarati
+        'જાન્યુઆરી': 1, 'ફેબ્રુઆરી': 2, 'માર્ચ': 3, 'એપ્રિલ': 4, 'મે': 5,
+        'જૂન': 6, 'જુલાઈ': 7, 'જુલાઇ': 7, 'ઓગસ્ટ': 8, 'ઑગસ્ટ': 8,
+        'સપ્ટેમ્બર': 9, 'ઓક્ટોબર': 10, 'નવેમ્બર': 11, 'ડિસેમ્બર': 12,
+        // Devanagari (Hindi) — Whisper often outputs these for Gujarati audio
+        'जनवरी': 1, 'जन': 1, 'फरवरी': 2, 'फ़रवरी': 2, 'मार्च': 3,
+        'अप्रैल': 4, 'अप्रिल': 4, 'मई': 5, 'मे': 5,
+        'जून': 6, 'जुलाई': 7, 'अगस्त': 8, 'अगस्ट': 8,
+        'सितंबर': 9, 'सितम्बर': 9, 'सितेम्बर': 9,
+        'अक्टूबर': 10, 'अक्तूबर': 10, 'अक्टोबर': 10,
+        'नवंबर': 11, 'नवम्बर': 11, 'दिसंबर': 12, 'दिसम्बर': 12
     };
-    const monthToken = '[a-zA-Z\\u0A80-\\u0AFF]+';
+    // monthToken includes Gujarati (U+0A80-U+0AFF) and Devanagari (U+0900-U+097F) ranges
+    const monthToken = '[a-zA-Z\\u0900-\\u097F\\u0A80-\\u0AFF]+';
     const separator = '(?:to|from|through|through|-|–|—|\\bthee\\b|\\btha\\b|\\bthi\\b|\\bto\\b|થી|સુધી|અને|ane)';
 
     const formatDateObj = (dateObj) => {
@@ -422,26 +448,34 @@ function createSilentWav() {
 }
 
 // ── HELPER: OPENAI TTS ───────────────────────────────────────────────────────
-async function generateOpenAITts(text) {
-    try {
-        console.log(`[OpenAI TTS] Generating TTS for text: "${text.substring(0, 80)}..."`);
-        const response = await axios.post('https://api.openai.com/v1/audio/speech', {
-            model: 'tts-1',
-            input: text,
-            voice: 'nova',
-            response_format: 'wav',
-            speed: 0.85
-        }, {
-            headers: {
-                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-                'Content-Type': 'application/json'
-            },
-            responseType: 'arraybuffer'
-        });
-        return Buffer.from(response.data);
-    } catch (err) {
-        console.error('[OpenAI TTS Error]:', err.response ? err.response.data : err.message);
-        throw err;
+async function generateOpenAITts(text, retries = 3) {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            console.log(`[OpenAI TTS] Attempt ${attempt}/${retries}: "${text.substring(0, 80)}..."`);
+            const response = await axios.post('https://api.openai.com/v1/audio/speech', {
+                model: 'tts-1',
+                input: text,
+                voice: 'nova',
+                response_format: 'wav',
+                speed: 0.85
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                responseType: 'arraybuffer',
+                timeout: 30000
+            });
+            return Buffer.from(response.data);
+        } catch (err) {
+            const status = err.response ? err.response.status : null;
+            const retryable = !status || status === 429 || status >= 500;
+            console.error(`[OpenAI TTS Error] attempt ${attempt}/${retries}, status=${status || err.code}`);
+            if (!retryable || attempt === retries) throw err;
+            const delay = Math.min(2000 * attempt, 8000);
+            console.log(`[OpenAI TTS] Retrying in ${delay}ms...`);
+            await new Promise(r => setTimeout(r, delay));
+        }
     }
 }
 
@@ -760,9 +794,20 @@ app.post('/api/voice-booking', upload.single('data'), async (req, res) => {
                     if (parsedDates) {
                         parsedDatesForUrl = parsedDates;
                         console.log(`[Verified Voice Date] ${parsedDates.start} → ${parsedDates.end}`);
+                        // Convert to clean structured TTS audio (same as text path) so n8n
+                        // receives a well-formed date utterance instead of raw spoken audio
+                        const monthNamesForSpeech = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                        const [sy, sm, sd] = parsedDates.start.split('-');
+                        const [ey, em, ed] = parsedDates.end.split('-');
+                        const startNatural = `${parseInt(sd)} ${monthNamesForSpeech[parseInt(sm) - 1]} ${sy}`;
+                        const endNatural = `${parseInt(ed)} ${monthNamesForSpeech[parseInt(em) - 1]} ${ey}`;
+                        const cleanDateText = `ચેક-ઇન ${startNatural} અને ચેક-આઉટ ${endNatural}.`;
+                        fileBuffer = await generateOpenAITts(cleanDateText);
+                        isWav = true;
+                        textHistoryHint = `Guest: ${voiceTranscript}\nSystem date parser: start_date=${parsedDates.start}, end_date=${parsedDates.end}. The guest has provided the check-in and check-out dates. Do not ask for dates again; confirm these dates and continue to the next required booking field.\n`;
+                        console.log(`[Verified Voice Date TTS] "${cleanDateText}"`);
                     }
                 }
-                // Original audio still sent to n8n; normalize node uses URL params if dates found
             }
         }
 

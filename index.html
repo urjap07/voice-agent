@@ -1166,59 +1166,76 @@
                 vadAudioContext = new (window.AudioContext || window.webkitAudioContext)();
                 const source = vadAudioContext.createMediaStreamSource(stream);
                 const analyser = vadAudioContext.createAnalyser();
-                analyser.fftSize = 512;
+                analyser.fftSize = 1024;
                 source.connect(analyser);
 
                 const bufferLength = analyser.fftSize;
                 const dataArray = new Float32Array(bufferLength);
 
+                // VAD tuning constants
+                const SPEECH_THRESHOLD = 0.022;    // RMS level that counts as speech (above ambient noise)
+                const MIN_SPEECH_MS = 250;          // Must speak for 250ms continuously before hasSpoken = true
+                const POST_SPEECH_SILENCE_MS = 700; // 0.7s silence after speech → auto-process immediately
+                const PRE_SPEECH_TIMEOUT_MS = 5000; // 5s to start speaking before re-listening
+                const MAX_RECORDING_MS = 20000;     // Hard cap at 20s
+
                 let silenceStart = null;
                 let hasSpoken = false;
+                let speechStartTime = null;   // When the current continuous speech burst started
+                let smoothedRms = 0;
+                const SMOOTH = 0.3;           // Exponential smoothing factor (0=no smoothing, 1=instant)
+
                 const recordingStartTime = Date.now();
                 vadActive = true;
 
                 const checkAudio = () => {
                     if (!vadActive || !isCallActive) {
                         if (vadAudioContext && vadAudioContext.state !== 'closed') {
-                            try {
-                                vadAudioContext.close();
-                            } catch (e) { }
+                            try { vadAudioContext.close(); } catch (e) { }
                         }
                         return;
                     }
 
                     analyser.getFloatTimeDomainData(dataArray);
                     let sum = 0;
-                    for (let i = 0; i < bufferLength; i++) {
-                        sum += dataArray[i] * dataArray[i];
-                    }
-                    const rms = Math.sqrt(sum / bufferLength);
+                    for (let i = 0; i < bufferLength; i++) sum += dataArray[i] * dataArray[i];
+                    const instantRms = Math.sqrt(sum / bufferLength);
 
-                    const threshold = 0.015;
-                    const now = Date.now();
+                    // Smooth RMS — single loud/quiet frames don't flip the speech state
+                    smoothedRms = smoothedRms * (1 - SMOOTH) + instantRms * SMOOTH;
 
+                    // Drive waveform bars with smoothed level
                     const bars = soundWave.querySelectorAll('.bar');
                     bars.forEach((bar, idx) => {
-                        const scale = 0.3 + rms * 10 * (idx + 1);
-                        bar.style.transform = `scaleY(${Math.min(Math.max(scale, 0.3), 3.0)})`;
+                        const scale = 0.3 + smoothedRms * 12 * (idx + 1);
+                        bar.style.transform = `scaleY(${Math.min(Math.max(scale, 0.3), 3.5)})`;
                     });
 
-                    if (now - recordingStartTime > 20000) {
+                    const now = Date.now();
+                    const isSpeaking = smoothedRms > SPEECH_THRESHOLD;
+
+                    if (now - recordingStartTime > MAX_RECORDING_MS) {
                         cleanupAndStop();
                         return;
                     }
 
-                    if (rms > threshold) {
-                        hasSpoken = true;
-                        silenceStart = null;
+                    if (isSpeaking) {
+                        if (speechStartTime === null) speechStartTime = now;
+
+                        // Only mark hasSpoken after sustained speech — prevents ambient noise triggers
+                        if (!hasSpoken && (now - speechStartTime) >= MIN_SPEECH_MS) {
+                            hasSpoken = true;
+                            setSaveStatus('સ્પષ્ટ સંભળાઈ રહ્યું છે... (બોલ્યા પછી આપોઆપ પ્રોસેસ થશે)', 'ok');
+                        }
+                        silenceStart = null; // Reset silence timer while speaking
                     } else {
+                        speechStartTime = null; // Speech burst ended — require new sustained burst
+
                         if (silenceStart === null) {
                             silenceStart = now;
                         } else {
                             const silenceDuration = now - silenceStart;
-                            // 2000ms after speech (was 1200) — gives time for natural Gujarati speech pauses
-                            // 5000ms before any speech (was 2500) — gives time to start speaking
-                            const maxSilence = hasSpoken ? 2000 : 5000;
+                            const maxSilence = hasSpoken ? POST_SPEECH_SILENCE_MS : PRE_SPEECH_TIMEOUT_MS;
                             if (silenceDuration > maxSilence) {
                                 cleanupAndStop();
                                 return;
@@ -1232,9 +1249,14 @@
                 const cleanupAndStop = () => {
                     vadActive = false;
                     if (vadAudioContext && vadAudioContext.state !== 'closed') {
-                        try {
-                            vadAudioContext.close();
-                        } catch (e) { }
+                        try { vadAudioContext.close(); } catch (e) { }
+                    }
+                    if (hasSpoken) {
+                        // Show processing immediately — before the server round-trip
+                        setSaveStatus('પ્રોસેસ કરી રહ્યું છે...');
+                        soundWave.classList.remove('active');
+                        soundWave.classList.add('connecting');
+                        soundWave.classList.add('active');
                     }
                     onSilence(hasSpoken);
                 };
